@@ -569,9 +569,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bk);color:var(--wh);displ
       <div><div class="tb-h">Team Total</div><div class="tb-s">All members combined &nbsp;·&nbsp; <span id="teamWeekLbl">Week 1</span></div></div>
       <div class="tb-badge">TEAM SUMMARY</div>
     </div>
-    <div class="m-grid m3" style="margin-bottom:20px;">
+
+    <div class="m-grid m4" style="margin-bottom:20px;">
       <div class="mc calls"><div class="mc-lbl"><div class="mc-dot"></div>Total Cold Calls</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:44px;letter-spacing:-0.04em;" id="tCalls">0</div><div class="mc-sub">Combined dials</div></div>
-      <div class="mc couns"><div class="mc-lbl"><div class="mc-dot"></div>Total Counselling</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:44px;letter-spacing:-0.04em;" id="tCoun">0</div><div class="mc-sub">Combined sessions</div></div>
+      <div class="mc couns"><div class="mc-lbl"><div class="mc-dot"></div>Total Counselling Done</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:44px;letter-spacing:-0.04em;" id="tCounDone">0</div><div class="mc-sub">Sales Team</div></div>
+      <div class="mc cbook"><div class="mc-lbl"><div class="mc-dot"></div>Total Counselling Booked</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:44px;letter-spacing:-0.04em;" id="tCounBooked">0</div><div class="mc-sub">ISE Team</div></div>
       <div class="mc close"><div class="mc-lbl"><div class="mc-dot"></div>Total Closers Done</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:44px;letter-spacing:-0.04em;" id="tClose">0</div><div class="mc-sub">Combined admissions</div></div>
     </div>
     <div style="font-family:'Sora',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--g1);margin-bottom:10px;">Individual Breakdown</div>
@@ -1496,14 +1498,19 @@ function updateCharts(){
 }
 
 function refreshTeamView(){
-  const tot={calls:0,coun:0,close:0};
+  const tot={calls:0,counDone:0,counBooked:0,close:0};
   members.forEach(m=>{
     tot.calls+=m.calls;
-    tot.coun+=(m.role==='ISE'?m.cbook||0:m.coun);
+    if (m.role === 'ISE') {
+      tot.counBooked += (m.cbook || 0);
+    } else {
+      tot.counDone += (m.coun || 0);
+    }
     tot.close+=m.close;
   });
   document.getElementById('tCalls').textContent=tot.calls;
-  document.getElementById('tCoun').textContent=tot.coun;
+  document.getElementById('tCounDone').textContent=tot.counDone;
+  document.getElementById('tCounBooked').textContent=tot.counBooked;
   document.getElementById('tClose').textContent=tot.close;
   document.getElementById('teamWeekLbl').textContent=document.getElementById('weekLabel').value;
   document.getElementById('teamBadge').textContent=document.getElementById('weekLabel').value.split('—')[0].trim().toUpperCase();
