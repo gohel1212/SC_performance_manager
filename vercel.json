@@ -1,4 +1,24 @@
 {
   "version": 2,
-  "cleanUrls": true
+  "cleanUrls": true,
+  "builds": [
+    {
+      "src": "api/data.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/data",
+      "dest": "api/data.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
 }
