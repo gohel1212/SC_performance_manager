@@ -1733,10 +1733,10 @@ async function generatePPT(){
     const BK='0A0A0A',OR='F86F03',WH='FFFFFF',GR='16A34A',BL='3B82F6',MG='8A8A8A',DG='222222',PU='8B5CF6',AM='F59E0B';
     const mkS=()=>({type:'outer',blur:8,offset:3,angle:135,color:'000000',opacity:0.14});
 
-    // ── Count of PERSONS (not sum) doing each activity ──
-    const personsCalledCount  = members.filter(m=>m.calls>0).length;
-    const personsCounCount    = members.filter(m=>(m.role==='ISE'?(m.cbook||0):m.coun)>0).length;
-    const personsCloserCount  = members.filter(m=>m.close>0).length;
+    // Compute total sums instead of counts of persons
+    const totalColdCalls = members.reduce((s, m) => s + (m.calls || 0), 0);
+    const totalCounSales = members.filter(m => m.role !== 'ISE').reduce((s, m) => s + (m.coun || 0), 0);
+    const totalCloseSales = members.filter(m => m.role !== 'ISE').reduce((s, m) => s + (m.close || 0), 0);
 
     /* ── SLIDE 1: COVER ── */
     {
@@ -1759,11 +1759,11 @@ async function generatePPT(){
       s.addShape(pres.shapes.RECTANGLE,{x:3.8,y:2.52,w:2.4,h:0.04,fill:{color:OR},line:{color:OR}});
       s.addText('ISE · Cold Calling · Counselling · Sales Closers',{x:0.5,y:2.65,w:9,h:0.36,fontSize:13,fontFace:'Calibri',color:'4A4A4A',align:'center',charSpacing:2});
 
-      // ── 3 STAT BOXES: Total PERSONS (count of people) ──
+      // ── 3 STAT BOXES: Total Sum of Action Values ──
       const boxes=[
-        {lbl:'TOTAL PERSON',sub:'COLD CALLING',val:personsCalledCount, x:1.1, col:OR},
-        {lbl:'TOTAL PERSON',sub:'COUNSELLING DONE',val:personsCounCount, x:4.05,col:BL},
-        {lbl:'TOTAL PERSON',sub:'CLOSER DONE',    val:personsCloserCount,x:7.0, col:GR},
+        {lbl:'TOTAL COLD CALLS',sub:'ALL PERSONS',     val:totalColdCalls, x:1.1, col:OR},
+        {lbl:'TOTAL COUNSELLING',sub:'SALES TEAM',      val:totalCounSales, x:4.05,col:BL},
+        {lbl:'TOTAL CLOSERS DONE',sub:'SALES TEAM',      val:totalCloseSales,x:7.0, col:GR},
       ];
       boxes.forEach(b=>{
         s.addShape(pres.shapes.RECTANGLE,{x:b.x,y:3.38,w:1.85,h:1.7,fill:{color:'141414'},line:{color:DG},shadow:mkS()});
