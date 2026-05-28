@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StackCode — Performance Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --o:#F86F03;--ol:#FF9A3C;--op:rgba(248,111,3,0.10);
+  --bk:#0A0A0A;--c1:#141414;--c2:#1C1C1C;--bdr:#252525;
+  --wh:#FFFFFF;--g1:#5A5A5A;--g2:#8A8A8A;--g3:#3A3A3A;
+  --bl:#3B82F6;--gr:#16A34A;--rd:#DC2626;--pu:#8B5CF6;
+  --sw:256px;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bk);color:var(--wh);display:flex;min-height:100vh;overflow-x:hidden;}
+
+/* ── SIDEBAR ── */
+.sb{width:var(--sw);min-height:100vh;background:#0D0D0D;border-right:1px solid var(--bdr);position:fixed;top:0;left:0;display:flex;flex-direction:column;overflow-y:auto;z-index:200;}
+.sb-logo{padding:20px 18px 14px;border-bottom:1px solid var(--bdr);}
+.sb-brand{font-family:'Sora',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.03em;}
+.sb-brand span{color:var(--o);}
+.sb-sub{font-size:9px;color:var(--g2);letter-spacing:0.12em;text-transform:uppercase;margin-top:1px;}
+.sb-week-wrap{padding:10px 14px 6px;}
+.sb-week-wrap label{font-size:9px;color:var(--o);font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:4px;}
+.sb-week-inp{width:100%;background:var(--op);border:1px solid rgba(248,111,3,0.2);border-radius:7px;padding:7px 10px;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--wh);outline:none;}
+.sb-sect{padding:10px 14px 3px;font-size:9px;font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--g1);display:flex;align-items:center;justify-content:space-between;}
+.sb-sect-add{background:none;border:1px solid var(--bdr);color:var(--g2);font-size:11px;border-radius:5px;padding:1px 7px;cursor:pointer;font-family:'Sora',sans-serif;font-weight:700;transition:all .15s;}
+.sb-sect-add:hover{background:var(--op);color:var(--o);border-color:var(--o);}
+.sb-nav{display:flex;flex-direction:column;gap:2px;padding:4px 10px;}
+.nb{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:transparent;border:none;cursor:pointer;width:100%;transition:background 0.14s;text-align:left;}
+.nb:hover{background:rgba(255,255,255,0.04);}
+.nb.act{background:var(--op);}
+.nb-num{width:24px;height:24px;border-radius:6px;background:var(--c1);font-family:'Sora',sans-serif;font-weight:700;font-size:10px;color:var(--o);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nb.act .nb-num{background:var(--o);color:#fff;}
+.nb-info{flex:1;min-width:0;}
+.nb-name{font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--wh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nb-role{font-size:9px;color:var(--g1);margin-top:1px;}
+.nb-role.ise{color:#8B5CF6;}
+.nb-role.sales{color:var(--o);}
+.nb-cl{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--gr);}
+.team-nb{margin:4px 10px 4px;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;background:var(--o);border:none;cursor:pointer;width:calc(100% - 20px);transition:background 0.15s;}
+.team-nb:hover{background:var(--ol);}
+.team-nb .nb-name{color:#fff;}
+.compare-nb{margin:2px 10px 4px;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;background:#1a1a2e;border:1px solid #3B82F6;cursor:pointer;width:calc(100% - 20px);transition:all 0.15s;}
+.compare-nb:hover{background:#1e2040;}
+.compare-nb .nb-name{color:var(--bl);}
+.sb-exports{padding:10px 14px;border-top:1px solid var(--bdr);margin-top:auto;}
+.se-title{font-size:9px;color:var(--g2);font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+.se-btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 0;border-radius:9px;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-weight:700;font-size:12px;letter-spacing:0.04em;width:100%;margin-bottom:7px;transition:all 0.15s;}
+.se-btn.ppt{background:var(--o);color:#fff;}
+.se-btn.ppt:hover{background:var(--ol);}
+.se-btn.xls{background:#1D6F42;color:#fff;}
+.se-btn.xls:hover{background:#22a053;}
+.se-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.sb-foot{padding:10px 14px;font-size:9px;color:var(--g1);line-height:1.6;border-top:1px solid var(--bdr);}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sw);flex:1;padding:26px 28px;min-height:100vh;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;}
+.tb-h{font-family:'Sora',sans-serif;font-weight:800;font-size:24px;letter-spacing:-0.03em;}
+.tb-s{font-size:12px;color:var(--g2);margin-top:2px;}
+.tb-badge{background:var(--op);border:1px solid rgba(248,111,3,0.25);color:var(--o);font-family:'Sora',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 12px;border-radius:20px;white-space:nowrap;}
+.tb-role-badge{font-family:'Sora',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 12px;border-radius:20px;white-space:nowrap;}
+.tb-role-badge.ise{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#8B5CF6;}
+.tb-role-badge.sales{background:rgba(248,111,3,0.1);border:1px solid rgba(248,111,3,0.25);color:var(--o);}
+.tb-right{display:flex;align-items:center;gap:8px;}
+
+/* VIEWS */
+.view{display:none;}.view.on{display:block;}
+
+/* ── METRIC INPUTS ── */
+.m-grid{display:grid;gap:14px;margin-bottom:16px;}
+.m3{grid-template-columns:repeat(3,1fr);}
+.m4{grid-template-columns:repeat(4,1fr);}
+.m2{grid-template-columns:repeat(2,1fr);}
+.mc{background:var(--c1);border:1.5px solid var(--bdr);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.mc:focus-within{border-color:var(--o);}
+.mc.calls{--ac:var(--o);}
+.mc.leads{--ac:#8B5CF6;}
+.mc.couns{--ac:var(--bl);}
+.mc.close{--ac:var(--gr);}
+.mc.cbook{--ac:#F59E0B;}
+.mc::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;background:var(--ac,var(--o));border-radius:12px 12px 0 0;}
+.mc-lbl{font-family:'Sora',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:var(--g2);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.mc-dot{width:6px;height:6px;border-radius:50%;background:var(--ac,var(--o));flex-shrink:0;}
+.mc-row{display:flex;align-items:center;gap:6px;}
+.mc-inp{background:transparent;border:none;outline:none;font-family:'Sora',sans-serif;font-weight:900;font-size:44px;letter-spacing:-0.04em;color:var(--wh);width:100%;line-height:1;}
+.mc-inp::placeholder{color:#2A2A2A;}
+.mc-inp::-webkit-inner-spin-button,.mc-inp::-webkit-outer-spin-button{-webkit-appearance:none;}
+.steppers{display:flex;flex-direction:column;gap:3px;flex-shrink:0;}
+.sb2{width:22px;height:22px;border-radius:6px;background:var(--c2);border:1px solid var(--bdr);color:var(--g2);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.14s;line-height:1;}
+.sb2:hover{background:var(--o);color:#fff;border-color:var(--o);}
+.mc-sub{font-size:10px;color:var(--g1);margin-top:5px;}
+.mc-sub span{color:var(--ac,var(--o));font-weight:600;}
+
+/* ── CLOSER SECTION ── */
+.closer-section{background:var(--c1);border:1.5px solid var(--bdr);border-radius:12px;padding:16px 18px;margin-bottom:16px;}
+.cs-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cs-title{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--gr);letter-spacing:0.08em;text-transform:uppercase;display:flex;align-items:center;gap:7px;}
+.cs-title::before{content:'●';font-size:8px;}
+.add-closer-btn{display:flex;align-items:center;gap:5px;background:rgba(22,163,74,0.12);border:1px solid rgba(22,163,74,0.3);color:var(--gr);font-family:'Sora',sans-serif;font-size:10px;font-weight:700;padding:5px 12px;border-radius:7px;cursor:pointer;transition:all 0.14s;letter-spacing:0.04em;}
+.add-closer-btn:hover{background:rgba(22,163,74,0.22);}
+.closer-list{display:flex;flex-direction:column;gap:8px;}
+.closer-item{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center;background:var(--c2);border-radius:8px;padding:10px 12px;border:1px solid var(--bdr);}
+.ci-inp{background:transparent;border:none;border-bottom:1px solid var(--bdr);outline:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--wh);padding:3px 0;width:100%;transition:border-color 0.2s;}
+.ci-inp:focus{border-color:var(--o);}
+.ci-inp::placeholder{color:#3A3A3A;font-size:11px;}
+.ci-del{width:26px;height:26px;border-radius:6px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.2);color:var(--rd);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.14s;flex-shrink:0;}
+.ci-del:hover{background:var(--rd);color:#fff;}
+.ci-lbl{font-size:9px;color:var(--g1);font-family:'Sora',sans-serif;letter-spacing:0.06em;margin-bottom:2px;}
+.no-closers{text-align:center;padding:16px;font-size:12px;color:var(--g1);}
+
+/* ── CHARTS ── */
+.charts-grid{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:16px;}
+.cc{background:var(--c1);border:1.5px solid var(--bdr);border-radius:12px;padding:18px;}
+.cc-title{font-family:'Sora',sans-serif;font-size:10px;font-weight:700;color:var(--g2);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.cc-badge{font-size:8px;background:var(--op);color:var(--o);border:1px solid rgba(248,111,3,0.2);padding:2px 8px;border-radius:10px;}
+.conv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.cv-item{background:var(--c2);border-radius:8px;padding:10px 12px;}
+.cv-lbl{font-size:8px;color:var(--g2);font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;}
+.cv-val{font-family:'Sora',sans-serif;font-weight:900;font-size:22px;letter-spacing:-0.03em;margin-bottom:3px;}
+.cv-bar-bg{height:3px;background:var(--bdr);border-radius:2px;overflow:hidden;}
+.cv-bar{height:100%;border-radius:2px;transition:width 0.5s cubic-bezier(.34,1.56,.64,1);}
+
+/* ── TEAM COMPARE ── */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px;}
+.tm-card{background:var(--c1);border:1.5px solid var(--bdr);border-radius:12px;padding:14px 15px;cursor:pointer;transition:all 0.18s;}
+.tm-card:hover{border-color:rgba(248,111,3,0.4);transform:translateY(-2px);}
+.tm-card.top{border-color:var(--o);}
+.tm-card.ise-card{border-left:3px solid #8B5CF6;}
+.tm-card.sales-card{border-left:3px solid var(--o);}
+.tm-num{font-size:8px;font-family:'Sora',sans-serif;font-weight:700;color:var(--o);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;}
+.tm-role-tag{display:inline-block;font-size:8px;font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:10px;margin-bottom:6px;}
+.tm-role-tag.ise{background:rgba(139,92,246,0.15);color:#8B5CF6;}
+.tm-role-tag.sales{background:rgba(248,111,3,0.1);color:var(--o);}
+.tm-name{font-family:'Sora',sans-serif;font-weight:700;font-size:13px;margin-bottom:10px;line-height:1.3;}
+.tm-rows{display:flex;flex-direction:column;gap:5px;}
+.tm-row{display:flex;align-items:center;justify-content:space-between;}
+.tm-rl{font-size:9px;color:var(--g1);}
+.tm-rv{font-family:'Sora',sans-serif;font-size:13px;font-weight:800;}
+
+/* ── WEEK COMPARISON ── */
+.compare-section{background:var(--c1);border:1.5px solid var(--bdr);border-radius:12px;padding:20px;margin-bottom:16px;}
+.comp-head{font-family:'Sora',sans-serif;font-size:10px;font-weight:700;color:var(--g2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.comp-head span{color:var(--bl);}
+.comp-week-row{display:flex;gap:10px;margin-bottom:14px;}
+.comp-week-inp{flex:1;background:var(--c2);border:1px solid var(--bdr);border-radius:7px;padding:6px 10px;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;color:var(--wh);outline:none;}
+.comp-week-inp:focus{border-color:var(--bl);}
+.comp-week-lbl{font-size:9px;color:var(--g1);font-family:'Sora',sans-serif;margin-bottom:3px;}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+.comp-stat{background:var(--c2);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
+.comp-stat-lbl{font-size:9px;color:var(--g1);font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+.comp-row{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;}
+.comp-val-grp{flex:1;}
+.comp-val-week{font-size:8px;color:var(--g2);margin-bottom:2px;font-family:'Sora',sans-serif;}
+.comp-val{font-family:'Sora',sans-serif;font-weight:900;font-size:28px;letter-spacing:-0.03em;}
+.comp-val.prev{color:var(--g2);font-size:20px;}
+.comp-val.curr{color:var(--wh);}
+.comp-diff{font-family:'Sora',sans-serif;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;}
+.comp-diff.up{background:rgba(22,163,74,0.15);color:var(--gr);}
+.comp-diff.down{background:rgba(220,38,38,0.15);color:var(--rd);}
+.comp-diff.same{background:rgba(90,90,90,0.2);color:var(--g2);}
+
+/* ── MEMBER CRUD MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:400;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-bg.on{display:flex;}
+.modal{background:#111;border:1px solid var(--bdr);border-radius:16px;padding:28px;width:420px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal h2{font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-bottom:20px;}
+.modal h2 span{color:var(--o);}
+.form-row{margin-bottom:14px;}
+.form-lbl{font-size:10px;font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--g2);margin-bottom:6px;display:block;}
+.form-inp{width:100%;background:var(--c2);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--wh);outline:none;transition:border-color .2s;}
+.form-inp:focus{border-color:var(--o);}
+.form-sel{width:100%;background:var(--c2);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--wh);outline:none;cursor:pointer;}
+.form-sel:focus{border-color:var(--o);}
+.form-sel option{background:#111;}
+.modal-btns{display:flex;gap:10px;margin-top:20px;}
+.modal-btn{flex:1;padding:11px 0;border-radius:9px;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-weight:700;font-size:13px;transition:all .15s;}
+.modal-btn.save{background:var(--o);color:#fff;}
+.modal-btn.save:hover{background:var(--ol);}
+.modal-btn.cancel{background:var(--c2);color:var(--g2);border:1px solid var(--bdr);}
+.modal-btn.cancel:hover{color:var(--wh);}
+.modal-btn.danger{background:rgba(220,38,38,0.15);color:var(--rd);border:1px solid rgba(220,38,38,0.2);}
+.modal-btn.danger:hover{background:var(--rd);color:#fff;}
+
+/* ── WEEK CRUD ── */
+.week-crud-bar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bdr);}
+.wcb-btn{flex:1;padding:7px 0;border-radius:7px;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-weight:700;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;transition:all .15s;}
+.wcb-btn.save{background:var(--op);color:var(--o);border:1px solid rgba(248,111,3,0.2);}
+.wcb-btn.save:hover{background:rgba(248,111,3,0.2);}
+.wcb-btn.load{background:var(--c2);color:var(--g2);border:1px solid var(--bdr);}
+.wcb-btn.load:hover{color:var(--wh);}
+.wcb-btn.clear{background:rgba(220,38,38,0.1);color:var(--rd);border:1px solid rgba(220,38,38,0.15);}
+.wcb-btn.clear:hover{background:var(--rd);color:#fff;}
+
+/* action bar inside individual view */
+.member-action-bar{display:flex;gap:8px;margin-bottom:16px;}
+.mab-btn{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.04em;transition:all .15s;}
+.mab-btn.edit{background:rgba(248,111,3,0.1);color:var(--o);border:1px solid rgba(248,111,3,0.2);}
+.mab-btn.edit:hover{background:rgba(248,111,3,0.2);}
+.mab-btn.del{background:rgba(220,38,38,0.08);color:var(--rd);border:1px solid rgba(220,38,38,0.15);}
+.mab-btn.del:hover{background:rgba(220,38,38,0.18);}
+.mab-btn.role{background:rgba(139,92,246,0.1);color:#8B5CF6;border:1px solid rgba(139,92,246,0.2);}
+.mab-btn.role:hover{background:rgba(139,92,246,0.2);}
+
+/* ISE specific card */
+.ise-notice{background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:#a78bfa;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;}
+
+/* ── CONFIRM MODAL ── */
+.confirm-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.confirm-modal-bg.on{display:flex;}
+.confirm-modal{background:#111;border:1px solid var(--bdr);border-radius:16px;padding:28px 28px 22px;width:380px;max-width:95vw;text-align:center;}
+.confirm-modal-icon{font-size:36px;margin-bottom:12px;}
+.confirm-modal-title{font-family:'Sora',sans-serif;font-weight:800;font-size:17px;margin-bottom:8px;}
+.confirm-modal-msg{font-size:12px;color:var(--g2);line-height:1.6;margin-bottom:22px;}
+.confirm-modal-btns{display:flex;gap:10px;}
+.confirm-modal-btn{flex:1;padding:11px 0;border-radius:9px;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-weight:700;font-size:13px;transition:all .15s;}
+.confirm-modal-btn.yes-danger{background:var(--rd);color:#fff;}
+.confirm-modal-btn.yes-danger:hover{background:#b91c1c;}
+.confirm-modal-btn.yes-ok{background:var(--o);color:#fff;}
+.confirm-modal-btn.yes-ok:hover{background:var(--ol);}
+.confirm-modal-btn.no{background:var(--c2);color:var(--g2);border:1px solid var(--bdr);}
+.confirm-modal-btn.no:hover{color:var(--wh);}
+
+/* ── NEXT WEEK MODAL ── */
+.nw-modal{background:#111;border:1px solid var(--bdr);border-radius:16px;padding:28px;width:460px;max-width:95vw;}
+.nw-modal h2{font-family:'Sora',sans-serif;font-weight:800;font-size:17px;margin-bottom:6px;}
+.nw-modal h2 span{color:var(--o);}
+.nw-desc{font-size:11px;color:var(--g2);line-height:1.6;margin-bottom:20px;padding:10px 12px;background:rgba(248,111,3,0.06);border:1px solid rgba(248,111,3,0.15);border-radius:8px;}
+.nw-step{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;}
+.nw-step-num{width:22px;height:22px;border-radius:50%;background:var(--o);color:#fff;font-family:'Sora',sans-serif;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.nw-step-body{flex:1;}
+.nw-step-lbl{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--wh);margin-bottom:4px;}
+.nw-step-sub{font-size:10px;color:var(--g2);}
+.nw-inp-row{display:flex;gap:8px;margin-top:6px;}
+.nw-inp{flex:1;background:var(--c2);border:1px solid var(--bdr);border-radius:7px;padding:8px 10px;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--wh);outline:none;}
+.nw-inp:focus{border-color:var(--o);}
+
+/* week history badge in sidebar */
+.week-hist{padding:6px 14px 4px;}
+.week-hist-lbl{font-size:8px;color:var(--g1);font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;}
+.week-hist-item{font-size:10px;color:var(--g2);font-family:'Sora',sans-serif;padding:5px 8px;border-radius:6px;margin-bottom:2px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border:1px solid transparent;transition:all .14s;}
+.week-hist-item:hover{background:rgba(248,111,3,0.08);border-color:rgba(248,111,3,0.2);color:var(--wh);}
+.week-hist-item:hover .wh-label{color:var(--o);}
+.week-hist-item:hover .wh-eye{opacity:1;}
+.wh-label{color:var(--o);font-weight:700;font-size:10px;}
+.wh-meta{font-size:8px;color:var(--g1);margin-top:1px;}
+.wh-eye{opacity:0;font-size:10px;color:var(--g2);transition:opacity .14s;}
+
+/* ── WEEK HISTORY MODAL ── */
+.hist-modal{position:fixed;inset:0;z-index:600;display:none;align-items:flex-start;justify-content:center;padding:32px 16px;background:rgba(0,0,0,0.75);overflow-y:auto;}
+.hist-modal.on{display:flex;}
+.hist-box{background:#111;border:1px solid var(--bdr);border-radius:14px;width:100%;max-width:860px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.7);}
+.hist-header{background:#161616;border-bottom:1px solid var(--bdr);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.hist-title{font-family:'Sora',sans-serif;font-weight:800;font-size:15px;color:var(--wh);}
+.hist-week-lbl{font-size:10px;color:var(--o);font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-top:2px;}
+.hist-close{background:none;border:1px solid var(--bdr);color:var(--g2);border-radius:7px;padding:4px 12px;cursor:pointer;font-size:13px;font-family:'Sora',sans-serif;transition:all .14s;}
+.hist-close:hover{border-color:var(--o);color:var(--o);}
+.hist-body{padding:20px;}
+.hist-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.hist-stat{background:var(--c1);border:1px solid var(--bdr);border-radius:10px;padding:14px;text-align:center;position:relative;overflow:hidden;}
+.hist-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.hist-stat.or::before{background:var(--o);}
+.hist-stat.bl::before{background:var(--bl);}
+.hist-stat.gr::before{background:var(--gr);}
+.hist-stat-val{font-family:'Sora',sans-serif;font-weight:800;font-size:32px;margin-top:4px;}
+.hist-stat.or .hist-stat-val{color:var(--o);}
+.hist-stat.bl .hist-stat-val{color:var(--bl);}
+.hist-stat.gr .hist-stat-val{color:var(--gr);}
+.hist-stat-lbl{font-size:8px;color:var(--g2);font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;}
+.hist-table{width:100%;border-collapse:collapse;font-size:12px;}
+.hist-table th{font-family:'Sora',sans-serif;font-size:8px;font-weight:700;color:var(--g1);letter-spacing:0.1em;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--bdr);text-align:left;}
+.hist-table td{padding:9px 10px;border-bottom:1px solid var(--bdr);color:var(--wh);font-family:'DM Sans',sans-serif;}
+.hist-table tr:last-child td{border-bottom:none;}
+.hist-table tr:hover td{background:rgba(255,255,255,0.02);}
+.hist-tag{display:inline-block;font-size:8px;font-family:'Sora',sans-serif;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:0.06em;}
+.hist-tag.ise{background:rgba(139,92,246,0.15);color:#8B5CF6;}
+.hist-tag.sales{background:rgba(248,111,3,0.12);color:var(--o);}
+.hist-closer-list{margin-top:18px;}
+.hist-closer-title{font-size:9px;color:var(--gr);font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+.hist-closer-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;}
+.hist-closer-card{background:var(--c1);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;}
+.hist-closer-name{font-family:'Sora',sans-serif;font-weight:700;font-size:11px;color:var(--wh);}
+.hist-closer-meta{font-size:10px;color:var(--g2);margin-top:2px;}
+.hist-closer-fee{font-size:11px;font-weight:700;color:var(--gr);margin-top:3px;}
+.hist-action-btn{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;padding:5px 13px;border-radius:7px;border:1px solid;cursor:pointer;transition:all .14s;}
+.hist-action-btn.edit{background:rgba(248,111,3,0.1);border-color:rgba(248,111,3,0.35);color:var(--o);}
+.hist-action-btn.edit:hover{background:rgba(248,111,3,0.22);border-color:var(--o);}
+.hist-action-btn.del{background:rgba(220,38,38,0.1);border-color:rgba(220,38,38,0.3);color:#DC2626;}
+.hist-action-btn.del:hover{background:rgba(220,38,38,0.2);border-color:#DC2626;}
+.hist-action-btn.save{background:rgba(22,163,74,0.15);border-color:rgba(22,163,74,0.4);color:var(--gr);}
+.hist-action-btn.save:hover{background:rgba(22,163,74,0.28);border-color:var(--gr);}
+.hist-action-btn.cancel{background:rgba(255,255,255,0.05);border-color:var(--bdr);color:var(--g2);}
+.hist-action-btn.cancel:hover{border-color:var(--g2);color:var(--wh);}
+.hist-edit-inp{background:var(--c2);border:1px solid var(--bdr);border-radius:5px;padding:4px 7px;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--wh);outline:none;width:70px;text-align:center;transition:border-color .14s;}
+.hist-edit-inp:focus{border-color:var(--o);}
+.hist-edit-hint{font-size:10px;color:var(--o);font-family:'Sora',sans-serif;background:rgba(248,111,3,0.07);border:1px solid rgba(248,111,3,0.2);border-radius:7px;padding:7px 12px;margin-bottom:12px;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--c1);border:1px solid var(--o);border-radius:10px;padding:10px 16px;font-size:12px;color:var(--wh);font-family:'Sora',sans-serif;font-weight:600;opacity:0;transform:translateY(8px);transition:all 0.3s;pointer-events:none;z-index:999;}
+.toast.on{opacity:1;transform:translateY(0);}
+.toast span{color:var(--o);}
+
+/* ── LOADING ── */
+.loading-overlay{position:fixed;inset:0;background:rgba(10,10,10,0.85);display:none;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:16px;}
+.loading-overlay.on{display:flex;}
+.spinner{width:44px;height:44px;border:3px solid var(--bdr);border-top-color:var(--o);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'Sora',sans-serif;font-size:14px;font-weight:600;color:var(--g2);}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px;}::-webkit-scrollbar-thumb:hover{background:var(--o);}
+
+/* compare view specific */
+.compare-view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.week-selector-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.wsr-card{background:var(--c1);border:1.5px solid var(--bdr);border-radius:10px;padding:14px;}
+.wsr-title{font-size:9px;font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+.wsr-title.prev{color:var(--g2);}
+.wsr-title.curr{color:var(--bl);}
+.wsr-inp{width:100%;background:var(--c2);border:1px solid var(--bdr);border-radius:6px;padding:7px 10px;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;color:var(--wh);outline:none;margin-bottom:8px;}
+.wsr-member-rows{display:flex;flex-direction:column;gap:6px;}
+.wsr-member{display:grid;grid-template-columns:1fr repeat(3,60px) repeat(3,60px);gap:4px;align-items:center;font-size:10px;}
+.wsr-member.header{color:var(--g1);font-family:'Sora',sans-serif;font-weight:700;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid var(--bdr);}
+.wsr-member-name{font-family:'DM Sans',sans-serif;font-weight:600;color:var(--wh);font-size:11px;}
+.wsr-inp-sm{background:var(--c2);border:1px solid var(--bdr);border-radius:5px;padding:4px 6px;font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--wh);outline:none;width:100%;text-align:center;}
+.wsr-inp-sm:focus{border-color:var(--bl);}
+.wsr-inp-sm.prev{border-color:var(--g3);}
+.wsr-inp-sm.curr{border-color:rgba(59,130,246,0.3);}
+
+/* comparison results */
+.comp-result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px;}
+.comp-result-card{background:var(--c1);border:1.5px solid var(--bdr);border-radius:12px;padding:16px;}
+.crc-name{font-family:'Sora',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;}
+.crc-role{font-size:9px;font-family:'Sora',sans-serif;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px;}
+.crc-role.ise{color:#8B5CF6;}
+.crc-role.sales{color:var(--o);}
+.crc-metrics{display:flex;flex-direction:column;gap:8px;}
+.crc-metric{display:flex;align-items:center;justify-content:space-between;}
+.crc-ml{font-size:9px;color:var(--g1);}
+.crc-mv{display:flex;align-items:center;gap:6px;}
+.crc-prev{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:var(--g2);}
+.crc-curr{font-family:'Sora',sans-serif;font-size:13px;font-weight:900;}
+.crc-arrow{font-size:10px;}
+.crc-arrow.up{color:var(--gr);}
+.crc-arrow.down{color:var(--rd);}
+.crc-arrow.same{color:var(--g2);}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loader"><div class="spinner"></div><div class="loading-text" id="loaderText">Generating PPT…</div></div>
+
+<!-- MEMBER MODAL -->
+<div class="modal-bg" id="memberModal">
+  <div class="modal">
+    <h2 id="modalTitle">Add <span>Member</span></h2>
+    <input type="hidden" id="modalMemberIdx" value="-1">
+    <div class="form-row">
+      <label class="form-lbl">Full Name</label>
+      <input class="form-inp" id="mName" placeholder="e.g. Darshan Gohel">
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Job Role</label>
+      <select class="form-sel" id="mRole">
+        <option value="ISE">ISE — Inside Sales Executive</option>
+        <option value="Sales">Sales Team</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeMemberModal()">Cancel</button>
+      <button class="modal-btn danger" id="modalDelBtn" onclick="deleteMemberFromModal()" style="display:none;">Delete</button>
+      <button class="modal-btn save" onclick="saveMemberModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="confirm-modal-bg" id="confirmModal">
+  <div class="confirm-modal">
+    <div class="confirm-modal-icon" id="cmIcon">⚠️</div>
+    <div class="confirm-modal-title" id="cmTitle">Are you sure?</div>
+    <div class="confirm-modal-msg" id="cmMsg">This action cannot be undone.</div>
+    <div class="confirm-modal-btns">
+      <button class="confirm-modal-btn no" onclick="confirmResolve(false)">Cancel</button>
+      <button class="confirm-modal-btn yes-danger" id="cmYesBtn" onclick="confirmResolve(true)">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEXT WEEK MODAL -->
+<div class="modal-bg" id="nextWeekModal">
+  <div class="nw-modal">
+    <h2>📅 Start <span>Next Week</span></h2>
+    <div class="nw-desc">
+      This will save the current week's data as "Last Week" for comparison, then reset all member numbers to zero so you can start fresh for the new week.
+    </div>
+    <div class="nw-step">
+      <div class="nw-step-num">1</div>
+      <div class="nw-step-body">
+        <div class="nw-step-lbl">Current week that will be saved as Last Week</div>
+        <div class="nw-step-sub">This label is saved for comparison in the Compare view.</div>
+        <div class="nw-inp-row"><input class="nw-inp" id="nwCurrentLabel" placeholder="e.g. Week 1 — May 2025"></div>
+      </div>
+    </div>
+    <div class="nw-step">
+      <div class="nw-step-num">2</div>
+      <div class="nw-step-body">
+        <div class="nw-step-lbl">New week label</div>
+        <div class="nw-step-sub">The sidebar week label will be updated to this.</div>
+        <div class="nw-inp-row"><input class="nw-inp" id="nwNewLabel" placeholder="e.g. Week 2 — May 2025"></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeNextWeekModal()">Cancel</button>
+      <button class="modal-btn save" onclick="confirmNextWeek()">🚀 Start Next Week</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="sb-brand">Stack<span>Code</span></div>
+    <div class="sb-sub" style="display: flex; justify-content: space-between; align-items: center;">
+      <span>Performance Manager</span>
+      <span id="syncIndicator" style="font-size: 8px; color: var(--g2); text-transform: uppercase; letter-spacing: 0.05em; background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
+        <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--g2); display: inline-block;" id="syncDot"></span>
+        <span id="syncText">Local</span>
+      </span>
+    </div>
+  </div>
+  <div class="sb-week-wrap">
+    <label>Current Week / Period</label>
+    <input class="sb-week-inp" id="weekLabel" value="Week 1 — May 2025" oninput="syncWeek()">
+  </div>
+  <!-- Week CRUD buttons -->
+  <div class="week-crud-bar" style="flex-wrap:wrap;gap:6px;">
+    <button class="wcb-btn save" style="flex:1 1 calc(50% - 3px);" onclick="openNextWeekModal()" title="Save this week & start next week">📅 Next Week</button>
+    <button class="wcb-btn load" style="flex:1 1 calc(50% - 3px);" onclick="showCompareView()" title="Compare with last week">📊 Compare</button>
+    <button class="wcb-btn clear" style="flex:1 1 100%;" onclick="clearCurrentWeek()" title="Reset all current numbers to zero">🗑 Clear This Week</button>
+  </div>
+  <div class="week-hist" id="weekHistBar" style="display:none;">
+    <div class="week-hist-lbl">Week History <span id="weekHistCount" style="color:var(--g2);font-weight:400;"></span></div>
+    <div id="weekHistList"></div>
+  </div>
+  <div class="sb-sect">Members <button class="sb-sect-add" onclick="openAddMember()">+ Add</button></div>
+  <div class="sb-nav" id="sbNav"></div>
+  <div class="sb-sect">Team</div>
+  <button class="team-nb" onclick="showTeam()">
+    <div class="nb-num" style="background:rgba(255,255,255,0.15);color:#fff;">📊</div>
+    <div class="nb-info"><div class="nb-name">Team Total</div></div>
+  </button>
+  <button class="compare-nb" onclick="showCompareView()">
+    <div class="nb-num" style="background:rgba(59,130,246,0.2);color:var(--bl);">⚡</div>
+    <div class="nb-info"><div class="nb-name">Week Compare</div></div>
+  </button>
+  <div class="sb-exports">
+    <div class="se-title">Export</div>
+    <button class="se-btn ppt" id="btnPPT" onclick="generatePPT()">🎯 Generate PPT</button>
+    <button class="se-btn xls" id="btnXLS" onclick="generateExcel()">📊 Export Excel</button>
+  </div>
+  <div class="sb-foot">StackCode Training Institute<br>Ahmedabad &amp; Rajkot</div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ── INDIVIDUAL VIEW ── -->
+  <div class="view on" id="vInd">
+    <div class="topbar">
+      <div><div class="tb-h" id="indTitle">Member</div><div class="tb-s">Performance &nbsp;·&nbsp; <span id="indWeek">Week 1</span></div></div>
+      <div class="tb-right">
+        <div class="tb-role-badge" id="indRoleBadge">ROLE</div>
+        <div class="tb-badge" id="indBadge">MEMBER 01</div>
+      </div>
+    </div>
+
+    <!-- Member action bar -->
+    <div class="member-action-bar">
+      <button class="mab-btn edit" onclick="openEditMember()">✏️ Edit Member</button>
+      <button class="mab-btn role" onclick="toggleRole()">🔄 Change Role</button>
+      <button class="mab-btn del" onclick="deleteMemberDirect()">🗑 Remove Member</button>
+    </div>
+
+    <!-- ISE notice (shown only for ISE role) -->
+    <div class="ise-notice" id="iseNotice" style="display:none;">
+      💼 <strong>ISE Role:</strong> Inside Sales Executive — Tracks Cold Calls, Positive Leads & Counselling Booked
+    </div>
+
+    <!-- ISE METRICS (3 metrics — No Closers for ISE) -->
+    <div class="m-grid m3" id="iseMetrics" style="display:none;">
+      <div class="mc calls">
+        <div class="mc-lbl"><div class="mc-dot"></div>Cold Calls</div>
+        <div class="mc-row"><input class="mc-inp" type="number" id="iiCalls" value="0" min="0" oninput="onChange()"><div class="steppers"><button class="sb2" onclick="step('iiCalls',1)">▲</button><button class="sb2" onclick="step('iiCalls',-1)">▼</button></div></div>
+        <div class="mc-sub">Total dials this week</div>
+      </div>
+      <div class="mc leads">
+        <div class="mc-lbl"><div class="mc-dot"></div>Positive Leads</div>
+        <div class="mc-row"><input class="mc-inp" type="number" id="iiLeads" value="0" min="0" oninput="onChange()"><div class="steppers"><button class="sb2" onclick="step('iiLeads',1)">▲</button><button class="sb2" onclick="step('iiLeads',-1)">▼</button></div></div>
+        <div class="mc-sub">Warm leads generated</div>
+      </div>
+      <div class="mc cbook">
+        <div class="mc-lbl"><div class="mc-dot"></div>Counselling Booked</div>
+        <div class="mc-row"><input class="mc-inp" type="number" id="iiCBook" value="0" min="0" oninput="onChange()"><div class="steppers"><button class="sb2" onclick="step('iiCBook',1)">▲</button><button class="sb2" onclick="step('iiCBook',-1)">▼</button></div></div>
+        <div class="mc-sub">Sessions scheduled</div>
+      </div>
+    </div>
+
+    <!-- SALES METRICS (3 metrics) -->
+    <div class="m-grid m3" id="salesMetrics">
+      <div class="mc calls">
+        <div class="mc-lbl"><div class="mc-dot"></div>Cold Calls</div>
+        <div class="mc-row"><input class="mc-inp" type="number" id="iCalls" value="0" min="0" oninput="onChange()"><div class="steppers"><button class="sb2" onclick="step('iCalls',1)">▲</button><button class="sb2" onclick="step('iCalls',-1)">▼</button></div></div>
+        <div class="mc-sub">Total dials this week</div>
+      </div>
+      <div class="mc couns">
+        <div class="mc-lbl"><div class="mc-dot"></div>Counselling Done</div>
+        <div class="mc-row"><input class="mc-inp" type="number" id="iCoun" value="0" min="0" oninput="onChange()"><div class="steppers"><button class="sb2" onclick="step('iCoun',1)">▲</button><button class="sb2" onclick="step('iCoun',-1)">▼</button></div></div>
+        <div class="mc-sub">Sessions completed</div>
+      </div>
+      <div class="mc close">
+        <div class="mc-lbl"><div class="mc-dot"></div>Closers Done</div>
+        <div class="mc-row"><input class="mc-inp" type="number" id="iClose" value="0" min="0" oninput="onClosersChange()"><div class="steppers"><button class="sb2" onclick="step('iClose',1);onClosersChange()">▲</button><button class="sb2" onclick="step('iClose',-1);onClosersChange()">▼</button></div></div>
+        <div class="mc-sub">Admissions confirmed</div>
+      </div>
+    </div>
+
+    <!-- CLOSER DETAILS (inline on same slide) -->
+    <div class="closer-section" id="closerSection">
+      <div class="cs-header">
+        <div class="cs-title">Closer Details</div>
+        <button class="add-closer-btn" onclick="addCloser()">+ Add Closer</button>
+      </div>
+      <div class="closer-list" id="closerList">
+        <div class="no-closers" id="noClosers">No closers yet. Enter closers count above or click + Add Closer.</div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-grid">
+      <div class="cc">
+        <div class="cc-title">Weekly Breakdown <span class="cc-badge" id="chartBadge">WEEK 1</span></div>
+        <div style="position:relative;height:200px;"><canvas id="barC"></canvas></div>
+      </div>
+      <div class="cc">
+        <div class="cc-title">Conversion Rates</div>
+        <div style="position:relative;height:140px;"><canvas id="donutC"></canvas></div>
+        <div class="conv-grid">
+          <div class="cv-item"><div class="cv-lbl">Call→Counsel</div><div class="cv-val orange" id="r1">0%</div><div class="cv-bar-bg"><div class="cv-bar" id="b1" style="width:0%;background:var(--o)"></div></div></div>
+          <div class="cv-item"><div class="cv-lbl">Counsel→Close</div><div class="cv-val green" id="r2">0%</div><div class="cv-bar-bg"><div class="cv-bar" id="b2" style="width:0%;background:var(--gr)"></div></div></div>
+          <div class="cv-item"><div class="cv-lbl">Overall Conv.</div><div class="cv-val blue" id="r3">0%</div><div class="cv-bar-bg"><div class="cv-bar" id="b3" style="width:0%;background:var(--bl)"></div></div></div>
+          <div class="cv-item"><div class="cv-lbl">Close / Day</div><div class="cv-val" id="r4">0.0</div><div class="cv-bar-bg"><div class="cv-bar" id="b4" style="width:0%;background:var(--g2)"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TEAM VIEW ── -->
+  <div class="view" id="vTeam">
+    <div class="topbar">
+      <div><div class="tb-h">Team Total</div><div class="tb-s">All members combined &nbsp;·&nbsp; <span id="teamWeekLbl">Week 1</span></div></div>
+      <div class="tb-badge">TEAM SUMMARY</div>
+    </div>
+    <div class="m-grid m3" style="margin-bottom:20px;">
+      <div class="mc calls"><div class="mc-lbl"><div class="mc-dot"></div>Total Cold Calls</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:44px;letter-spacing:-0.04em;" id="tCalls">0</div><div class="mc-sub">Combined dials</div></div>
+      <div class="mc couns"><div class="mc-lbl"><div class="mc-dot"></div>Total Counselling</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:44px;letter-spacing:-0.04em;" id="tCoun">0</div><div class="mc-sub">Combined sessions</div></div>
+      <div class="mc close"><div class="mc-lbl"><div class="mc-dot"></div>Total Closers Done</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:44px;letter-spacing:-0.04em;" id="tClose">0</div><div class="mc-sub">Combined admissions</div></div>
+    </div>
+    <div style="font-family:'Sora',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--g1);margin-bottom:10px;">Individual Breakdown</div>
+    <div class="team-grid" id="teamGrid"></div>
+    <div class="cc">
+      <div class="cc-title">Team Comparison <span class="cc-badge" id="teamBadge">WEEK 1</span></div>
+      <div style="position:relative;height:240px;"><canvas id="teamC"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── COMPARE VIEW ── -->
+  <div class="view" id="vCompare">
+    <div class="topbar">
+      <div><div class="tb-h">Week Comparison</div><div class="tb-s">Last week vs Current week — Numbers &amp; Graphs</div></div>
+      <div class="tb-badge" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:var(--bl);">⚡ COMPARE</div>
+    </div>
+
+    <!-- Week name inputs -->
+    <div class="week-selector-row">
+      <div class="wsr-card">
+        <div class="wsr-title prev">📅 Last Week Label</div>
+        <input class="wsr-inp" id="prevWeekLabel" value="Last Week" oninput="refreshCompare()">
+      </div>
+      <div class="wsr-card">
+        <div class="wsr-title curr">📅 Current Week Label</div>
+        <input class="wsr-inp" id="currWeekLabel" value="Current Week" oninput="refreshCompare()">
+      </div>
+    </div>
+
+    <!-- Data entry table -->
+    <div class="m-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px;">
+      <div class="wsr-card">
+        <div class="wsr-title prev" style="margin-bottom:10px;">📥 Last Week Data</div>
+        <div id="prevWeekInputs"></div>
+      </div>
+      <div class="wsr-card">
+        <div class="wsr-title curr" style="margin-bottom:10px;">📥 Current Week Data (auto-filled)</div>
+        <div id="currWeekInputs"></div>
+      </div>
+    </div>
+
+    <!-- Summary comparison stats -->
+    <div style="font-family:'Sora',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--g1);margin-bottom:10px;">Team Totals Comparison</div>
+    <div class="comp-grid" id="compStatGrid"></div>
+
+    <!-- Per-member comparison cards -->
+    <div style="font-family:'Sora',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--g1);margin-bottom:10px;">Per Member Comparison</div>
+    <div class="comp-result-grid" id="compMemberGrid"></div>
+
+    <!-- Comparison Chart -->
+    <div class="cc">
+      <div class="cc-title">Last Week vs Current Week <span class="cc-badge">GRAPH</span></div>
+      <div style="position:relative;height:280px;"><canvas id="compareC"></canvas></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast">📊 <span id="toastMsg">Updated</span></div>
+
+<!-- ── WEEK HISTORY VIEWER MODAL ── -->
+<div class="hist-modal" id="histModal" onclick="if(event.target===this)closeHistModal()">
+  <div class="hist-box">
+    <div class="hist-header">
+      <div>
+        <div class="hist-title">📅 Week History</div>
+        <div class="hist-week-lbl" id="histModalWeekLbl">—</div>
+      </div>
+      <div id="histModalActions" style="display:flex;align-items:center;gap:8px;"></div>
+    </div>
+    <div class="hist-body" id="histModalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA MODEL
+   Each member: { name, role ('ISE'|'Sales'), calls, leads, cbook, coun, close, closers[] }
+═══════════════════════════════════════════ */
+let members = [
+  { name:"Darshan Gohel", role:"Sales", calls:0, leads:0, cbook:0, coun:0, close:0, closers:[] },
+  { name:"Ravi Patel",    role:"Sales", calls:0, leads:0, cbook:0, coun:0, close:0, closers:[] },
+  { name:"Priya Mehta",   role:"ISE",   calls:0, leads:0, cbook:0, coun:0, close:0, closers:[] },
+  { name:"Aman Shah",     role:"ISE",   calls:0, leads:0, cbook:0, coun:0, close:0, closers:[] },
+];
+
+// Previous week stored data (for comparison)
+let prevWeekData = {}; // { memberName: {calls,leads,cbook,coun,close} }
+let weekHistory = [];
+let prevWeekLabel = "Last Week";
+
+let cur = 0;
+let curView = 'ind';
+let barInst=null, donutInst=null, teamInst=null, compareInst=null;
+const OC='F86F03', BC='3B82F6', GC='16A34A', PC='8B5CF6';
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', async ()=>{
+  await loadFromDB();
+  buildNav();
+  loadMember(0);
+  initBar();
+  initDonut();
+  initTeamChart();
+  initCompareChart();
+  updateWeekHistBar();
+
+  // Set up background auto-refresh every 30 seconds
+  setInterval(async () => {
+    if (!document.querySelector('.modal-bg.on') && 
+        !document.querySelector('.confirm-modal-bg.on') && 
+        document.activeElement.tagName !== 'INPUT' && 
+        document.activeElement.tagName !== 'SELECT') {
+      
+      const prevSelectedMember = cur;
+      const prevViewMode = curView;
+      
+      await loadFromDB(true); // silent sync
+      
+      cur = prevSelectedMember;
+      curView = prevViewMode;
+      
+      buildNav();
+      if(curView === 'ind') {
+        loadMember(cur);
+      } else if(curView === 'team') {
+        refreshTeamView();
+      } else if(curView === 'compare') {
+        buildCompareInputs();
+        refreshCompare();
+      }
+      updateWeekHistBar();
+    }
+  }, 30000);
+});
+
+function showSyncIndicator(text, success) {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncText');
+  if (!dot || !txt) return;
+  txt.textContent = text;
+  if (text.includes('Sync') || text.includes('Saving')) {
+    dot.style.background = '#F59E0B'; // Amber
+    dot.style.boxShadow = '0 0 5px #F59E0B';
+  } else if (success === true) {
+    dot.style.background = 'var(--gr)'; // Green
+    dot.style.boxShadow = '0 0 5px var(--gr)';
+  } else if (success === false) {
+    dot.style.background = 'var(--rd)'; // Red
+    dot.style.boxShadow = '0 0 5px var(--rd)';
+  } else {
+    dot.style.background = 'var(--g2)'; // Default grey
+    dot.style.boxShadow = 'none';
+  }
+}
+
+async function loadFromDB(silent = false) {
+  let data = null;
+  try {
+    if (!silent) showSyncIndicator('Syncing...', null);
+    const res = await fetch('/api/data');
+    if (res.ok) {
+      data = await res.json();
+    }
+  } catch (err) {
+    console.error('Failed to sync from database:', err);
+  }
+
+  if (data && data.members) {
+    members = data.members;
+    prevWeekData = data.prevWeekData || {};
+    weekHistory = data.weekHistory || [];
+    prevWeekLabel = data.prevWeekLabel || "Last Week";
+    if (data.weekLabel) {
+      document.getElementById('weekLabel').value = data.weekLabel;
+    }
+    if (!silent) showSyncIndicator('Synced', true);
+  } else {
+    loadFromStorage();
+    if (!silent) showSyncIndicator('Local', null);
+  }
+}
+
+async function saveToDB() {
+  try {
+    localStorage.setItem('sc_members', JSON.stringify(members));
+    localStorage.setItem('sc_prevWeek', JSON.stringify(prevWeekData));
+    localStorage.setItem('sc_weekLabel', document.getElementById('weekLabel').value);
+    localStorage.setItem('sc_weekHistory', JSON.stringify(weekHistory));
+    localStorage.setItem('sc_prevWeekLabel', prevWeekLabel);
+  } catch(e) {}
+
+  const state = {
+    members,
+    prevWeekData,
+    weekLabel: document.getElementById('weekLabel').value,
+    weekHistory,
+    prevWeekLabel
+  };
+
+  try {
+    showSyncIndicator('Saving...', null);
+    const res = await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state)
+    });
+    if (!res.ok) throw new Error('Save failed');
+    showSyncIndicator('Saved', true);
+  } catch (err) {
+    console.error('Save to database failed:', err);
+    showSyncIndicator('Offline', false);
+  }
+}
+
+function loadFromStorage(){
+  try{
+    const saved = localStorage.getItem('sc_members');
+    if(saved) members = JSON.parse(saved);
+    const savedPrev = localStorage.getItem('sc_prevWeek');
+    if(savedPrev) prevWeekData = JSON.parse(savedPrev);
+    const savedWeek = localStorage.getItem('sc_weekLabel');
+    if(savedWeek) document.getElementById('weekLabel').value = savedWeek;
+    const savedHist = localStorage.getItem('sc_weekHistory');
+    if(savedHist) weekHistory = JSON.parse(savedHist);
+    const savedPrevLabel = localStorage.getItem('sc_prevWeekLabel');
+    if(savedPrevLabel) prevWeekLabel = savedPrevLabel;
+  }catch(e){}
+}
+
+function saveToStorage(){
+  saveToDB();
+}
+
+/* ═══════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════ */
+function buildNav(){
+  const nav=document.getElementById('sbNav');
+  nav.innerHTML='';
+  members.forEach((m,i)=>{
+    const b=document.createElement('button');
+    b.className='nb'+(i===cur&&curView==='ind'?' act':'');
+    const roleClass = m.role==='ISE'?'ise':'sales';
+    const roleLabel = m.role==='ISE'?'ISE':'Sales';
+    b.innerHTML=`<div class="nb-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="nb-info">
+        <div class="nb-name">${m.name}</div>
+        <div class="nb-role ${roleClass}">${roleLabel}</div>
+      </div>
+      <div class="nb-cl">${m.close}</div>`;
+    b.onclick=()=>switchMember(i);
+    nav.appendChild(b);
+  });
+}
+
+function switchMember(i){
+  saveCur();
+  cur=i; curView='ind';
+  loadMember(i);
+  buildNav();
+  document.getElementById('vInd').classList.add('on');
+  document.getElementById('vTeam').classList.remove('on');
+  document.getElementById('vCompare').classList.remove('on');
+}
+
+function showTeam(){
+  saveCur();
+  curView='team';
+  buildNav();
+  document.getElementById('vInd').classList.remove('on');
+  document.getElementById('vTeam').classList.add('on');
+  document.getElementById('vCompare').classList.remove('on');
+  refreshTeamView();
+}
+
+function showCompareView(){
+  saveCur();
+  curView='compare';
+  buildNav();
+  document.getElementById('vInd').classList.remove('on');
+  document.getElementById('vTeam').classList.remove('on');
+  document.getElementById('vCompare').classList.add('on');
+  buildCompareInputs();
+  refreshCompare();
+}
+
+/* ═══════════════════════════════════════════
+   LOAD / SAVE MEMBER
+═══════════════════════════════════════════ */
+function saveCur(){
+  if(curView!=='ind') return;
+  const m=members[cur];
+  if(m.role==='ISE'){
+    m.calls = parseInt(document.getElementById('iiCalls').value)||0;
+    m.leads = parseInt(document.getElementById('iiLeads').value)||0;
+    m.cbook = parseInt(document.getElementById('iiCBook').value)||0;
+    m.close = 0; // ISE does not track Closers Done
+    m.coun  = 0;
+    m.closers = [];
+  } else {
+    m.calls = parseInt(document.getElementById('iCalls').value)||0;
+    m.coun  = parseInt(document.getElementById('iCoun').value)||0;
+    m.close = parseInt(document.getElementById('iClose').value)||0;
+    m.leads = 0; m.cbook = 0;
+    m.closers = collectClosers();
+  }
+  saveToStorage();
+}
+
+function loadMember(i){
+  const m=members[i];
+  const isISE = m.role==='ISE';
+
+  // Show/hide metric panels
+  document.getElementById('iseMetrics').style.display = isISE?'grid':'none';
+  document.getElementById('salesMetrics').style.display = isISE?'none':'grid';
+  document.getElementById('iseNotice').style.display = isISE?'flex':'none';
+
+  // Update role badge
+  const rb = document.getElementById('indRoleBadge');
+  if(isISE){
+    rb.className='tb-role-badge ise';
+    rb.textContent='ISE — Inside Sales Exec';
+  } else {
+    rb.className='tb-role-badge sales';
+    rb.textContent='Sales Team';
+  }
+
+  if(isISE){
+    document.getElementById('iiCalls').value = m.calls;
+    document.getElementById('iiLeads').value = m.leads||0;
+    document.getElementById('iiCBook').value = m.cbook||0;
+  } else {
+    document.getElementById('iCalls').value = m.calls;
+    document.getElementById('iCoun').value  = m.coun;
+    document.getElementById('iClose').value = m.close;
+  }
+
+  // ISE has no closer section
+  document.getElementById('closerSection').style.display = isISE ? 'none' : 'block';
+  document.getElementById('indTitle').textContent = m.name;
+  document.getElementById('indBadge').textContent = `MEMBER ${String(i+1).padStart(2,'0')}`;
+  document.getElementById('indWeek').textContent  = document.getElementById('weekLabel').value;
+  renderCloserList(m.closers, m.close);
+  updateCharts();
+}
+
+/* ═══════════════════════════════════════════
+   MEMBER CRUD
+═══════════════════════════════════════════ */
+function openAddMember(){
+  document.getElementById('modalTitle').innerHTML='Add <span>Member</span>';
+  document.getElementById('modalMemberIdx').value='-1';
+  document.getElementById('mName').value='';
+  document.getElementById('mRole').value='Sales';
+  document.getElementById('modalDelBtn').style.display='none';
+  document.getElementById('memberModal').classList.add('on');
+}
+
+function openEditMember(){
+  const m=members[cur];
+  document.getElementById('modalTitle').innerHTML='Edit <span>Member</span>';
+  document.getElementById('modalMemberIdx').value=cur;
+  document.getElementById('mName').value=m.name;
+  document.getElementById('mRole').value=m.role;
+  document.getElementById('modalDelBtn').style.display='block';
+  document.getElementById('memberModal').classList.add('on');
+}
+
+function closeMemberModal(){
+  document.getElementById('memberModal').classList.remove('on');
+}
+
+function saveMemberModal(){
+  const name = document.getElementById('mName').value.trim();
+  const role = document.getElementById('mRole').value;
+  const idx  = parseInt(document.getElementById('modalMemberIdx').value);
+  if(!name){ toast('Please enter a name'); return; }
+  if(idx===-1){
+    members.push({name,role,calls:0,leads:0,cbook:0,coun:0,close:0,closers:[]});
+    toast('Member added!');
+  } else {
+    saveCur();
+    members[idx].name = name;
+    members[idx].role = role;
+    if(cur===idx){ loadMember(idx); }
+    toast('Member updated!');
+  }
+  saveToStorage();
+  buildNav();
+  closeMemberModal();
+}
+
+/* ── CUSTOM CONFIRM (replaces browser confirm which is blocked in iframes) ── */
+let _confirmResolveRef = null;
+function customConfirm(title, msg, icon, type){
+  icon = icon || '⚠️';
+  type = type || 'danger';
+  return new Promise(resolve => {
+    _confirmResolveRef = resolve;
+    document.getElementById('cmTitle').textContent = title;
+    document.getElementById('cmMsg').textContent   = msg;
+    document.getElementById('cmIcon').textContent  = icon;
+    const yesBtn = document.getElementById('cmYesBtn');
+    yesBtn.textContent = type==='danger' ? 'Yes, Delete' : 'Yes, Proceed';
+    yesBtn.className   = `confirm-modal-btn ${type==='danger'?'yes-danger':'yes-ok'}`;
+    document.getElementById('confirmModal').classList.add('on');
+  });
+}
+function confirmResolve(val){
+  document.getElementById('confirmModal').classList.remove('on');
+  if(_confirmResolveRef){ _confirmResolveRef(val); _confirmResolveRef=null; }
+}
+
+async function deleteMemberFromModal(){
+  const idx = parseInt(document.getElementById('modalMemberIdx').value);
+  if(members.length<=1){ toast('Need at least 1 member'); return; }
+  const ok = await customConfirm(`Delete "${members[idx].name}"?`, 'This member and all their data will be permanently removed.', '🗑️', 'danger');
+  if(!ok) return;
+  members.splice(idx,1);
+  if(cur>=members.length) cur=members.length-1;
+  saveToStorage();
+  buildNav();
+  closeMemberModal();
+  loadMember(cur);
+  toast('Member deleted');
+}
+
+async function deleteMemberDirect(){
+  if(members.length<=1){ toast('Need at least 1 member'); return; }
+  const ok = await customConfirm(`Delete "${members[cur].name}"?`, 'This member and all their data will be permanently removed.', '🗑️', 'danger');
+  if(!ok) return;
+  members.splice(cur,1);
+  if(cur>=members.length) cur=members.length-1;
+  saveToStorage();
+  buildNav();
+  loadMember(cur);
+  toast('Member deleted');
+}
+
+function toggleRole(){
+  saveCur();
+  const m=members[cur];
+  m.role = m.role==='ISE'?'Sales':'ISE';
+  m.leads=0; m.cbook=0; m.coun=0;
+  saveToStorage();
+  buildNav();
+  loadMember(cur);
+  toast(`Role changed to ${m.role}`);
+}
+
+/* ═══════════════════════════════════════════
+   WEEK SNAPSHOT CRUD
+═══════════════════════════════════════════ */
+function pushToWeekHistory(label){
+  try{
+    const hist = getWeekHistory();
+    // Don't duplicate same label
+    if(hist.some(h=>h.label===label)) return;
+    saveCur();
+    hist.push({
+      label,
+      savedAt: new Date().toISOString(),
+      data: members.map(m=>({
+        name:m.name, role:m.role,
+        calls:m.calls, leads:m.leads||0,
+        cbook:m.cbook||0, coun:m.coun,
+        close:m.close,
+        closers:(m.closers||[]).filter(c=>c.name),
+      }))
+    });
+    weekHistory = hist;
+    saveToDB();
+  }catch(e){}
+}
+
+function saveWeekSnapshot(){
+  saveCur();
+  prevWeekData = {};
+  members.forEach(m=>{
+    prevWeekData[m.name] = {calls:m.calls,leads:m.leads||0,cbook:m.cbook||0,coun:m.coun,close:m.close};
+  });
+  const wl = document.getElementById('weekLabel').value;
+  prevWeekLabel = wl;
+  try{
+    localStorage.setItem('sc_prevWeek', JSON.stringify(prevWeekData));
+    localStorage.setItem('sc_prevWeekLabel', wl);
+  }catch(e){}
+  pushToWeekHistory(wl);
+  updateWeekHistBar();
+  toast('Week snapshot saved! Now update current week data.');
+}
+
+function openNextWeekModal(){
+  const cur_week = document.getElementById('weekLabel').value;
+  document.getElementById('nwCurrentLabel').value = cur_week;
+  // Auto-suggest next week label
+  const match = cur_week.match(/Week\s+(\d+)/i);
+  if(match){
+    const num = parseInt(match[1]);
+    document.getElementById('nwNewLabel').value = cur_week.replace(/Week\s+\d+/i, 'Week '+(num+1));
+  } else {
+    document.getElementById('nwNewLabel').value = '';
+  }
+  document.getElementById('nextWeekModal').classList.add('on');
+}
+
+function closeNextWeekModal(){
+  document.getElementById('nextWeekModal').classList.remove('on');
+}
+
+async function confirmNextWeek(){
+  const savedLabel = document.getElementById('nwCurrentLabel').value.trim();
+  const newLabel   = document.getElementById('nwNewLabel').value.trim();
+  if(!newLabel){ toast('Please enter a label for the new week'); return; }
+  saveCur();
+  // 1. Save snapshot of current week
+  prevWeekData = {};
+  members.forEach(m=>{
+    prevWeekData[m.name] = {calls:m.calls,leads:m.leads||0,cbook:m.cbook||0,coun:m.coun,close:m.close};
+  });
+  prevWeekLabel = savedLabel || document.getElementById('weekLabel').value;
+  try{
+    localStorage.setItem('sc_prevWeek', JSON.stringify(prevWeekData));
+    localStorage.setItem('sc_prevWeekLabel', prevWeekLabel);
+  }catch(e){}
+  pushToWeekHistory(prevWeekLabel);
+  // 2. Reset all member data
+  members.forEach(m=>{ m.calls=0;m.leads=0;m.cbook=0;m.coun=0;m.close=0;m.closers=[]; });
+  // 3. Update week label
+  document.getElementById('weekLabel').value = newLabel;
+  saveToStorage();
+  // 4. Update history bar in sidebar
+  updateWeekHistBar();
+  // 5. Reload UI
+  buildNav();
+  loadMember(cur);
+  syncWeek();
+  closeNextWeekModal();
+  toast('✅ New week started: '+newLabel);
+}
+
+function updateWeekHistBar(){
+  try{
+    const hist = getWeekHistory();
+    const bar = document.getElementById('weekHistBar');
+    const list = document.getElementById('weekHistList');
+    const count = document.getElementById('weekHistCount');
+    if(!hist.length){ bar.style.display='none'; return; }
+    bar.style.display='block';
+    count.textContent = `(${hist.length})`;
+    list.innerHTML = hist.slice().reverse().map((w,ri)=>{
+      const i = hist.length-1-ri;
+      const totalCalls = (w.data||[]).reduce((s,m)=>s+(m.calls||0),0);
+      const totalClose = (w.data||[]).reduce((s,m)=>s+(m.close||0),0);
+      return `<div class="week-hist-item" onclick="openHistModal(${i})" title="Click to view ${w.label} data">
+        <div>
+          <div class="wh-label">${w.label}</div>
+          <div class="wh-meta">${totalCalls} calls · ${totalClose} closers</div>
+        </div>
+        <span class="wh-eye">👁</span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+function getWeekHistory(){
+  return weekHistory || [];
+}
+
+let _histEditIdx = null;
+let _histEditMode = false;
+
+function openHistModal(idx){
+  _histEditIdx = idx;
+  _histEditMode = false;
+  renderHistModal();
+  document.getElementById('histModal').classList.add('on');
+}
+
+function closeHistModal(){
+  document.getElementById('histModal').classList.remove('on');
+  _histEditIdx = null;
+  _histEditMode = false;
+}
+
+function renderHistModal(){
+  const hist = getWeekHistory();
+  const w = hist[_histEditIdx];
+  if(!w) return;
+
+  const data = w.data || [];
+  const totalCalls = data.reduce((s,m)=>s+(m.calls||0),0);
+  const totalCoun  = data.reduce((s,m)=>s+(m.role==='ISE'?(m.cbook||0):(m.coun||0)),0);
+  const totalClose = data.filter(m=>m.role!=='ISE').reduce((s,m)=>s+(m.close||0),0);
+  const allClosers = [];
+  data.forEach(m=>{
+    (m.closers||[]).filter(c=>c.name).forEach(c=>allClosers.push({...c,by:m.name}));
+  });
+
+  // Header
+  document.getElementById('histModalWeekLbl').innerHTML = _histEditMode
+    ? `<input id="histLabelInput" value="${w.label}" style="background:var(--c2);border:1px solid var(--o);border-radius:6px;padding:4px 10px;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--o);outline:none;width:220px;">`
+    : w.label;
+
+  // Action buttons in header
+  document.getElementById('histModalActions').innerHTML = _histEditMode
+    ? `<button class="hist-action-btn save" onclick="saveHistEdit()">💾 Save</button>
+       <button class="hist-action-btn cancel" onclick="cancelHistEdit()">✕ Cancel</button>`
+    : `<button class="hist-action-btn edit" onclick="enterHistEdit()">✏️ Edit</button>
+       <button class="hist-action-btn del" onclick="deleteHistEntry()">🗑 Delete</button>
+       <button class="hist-close" onclick="closeHistModal()">✕ Close</button>`;
+
+  // Body
+  const memberRows = _histEditMode
+    ? data.map((m,mi)=>{
+        const isISE = m.role==='ISE';
+        return `<tr>
+          <td style="font-weight:700;color:var(--wh)">${m.name}</td>
+          <td><span class="hist-tag ${isISE?'ise':'sales'}">${isISE?'ISE':'Sales'}</span></td>
+          <td><input class="hist-edit-inp" type="number" min="0" value="${m.calls||0}" onchange="updateHistField(${mi},'calls',this.value)" style="border-color:var(--o)"></td>
+          <td><input class="hist-edit-inp" type="number" min="0" value="${isISE?(m.cbook||0):(m.coun||0)}" onchange="updateHistField(${mi},${isISE?`'cbook'`:`'coun'`},this.value)"></td>
+          <td>${isISE?'<span style="color:var(--g1)">—</span>':`<input class="hist-edit-inp" type="number" min="0" value="${m.close||0}" onchange="updateHistField(${mi},'close',this.value)" style="border-color:var(--gr)">`}</td>
+          <td>${isISE?`<input class="hist-edit-inp" type="number" min="0" value="${m.leads||0}" onchange="updateHistField(${mi},'leads',this.value)" style="border-color:#8B5CF6">`:'<span style="color:var(--g1)">—</span>'}</td>
+        </tr>`;
+      }).join('')
+    : data.map(m=>{
+        const isISE=m.role==='ISE';
+        const coun=isISE?(m.cbook||0):(m.coun||0);
+        return `<tr>
+          <td style="font-weight:700">${m.name}</td>
+          <td><span class="hist-tag ${isISE?'ise':'sales'}">${isISE?'ISE':'Sales'}</span></td>
+          <td style="color:var(--o);font-weight:700">${m.calls||0}</td>
+          <td style="color:var(--bl);font-weight:700">${coun}</td>
+          <td style="color:var(--gr);font-weight:700">${isISE?'—':(m.close||0)}</td>
+          <td style="color:#8B5CF6;font-weight:700">${isISE?(m.leads||0):'—'}</td>
+        </tr>`;
+      }).join('');
+
+  document.getElementById('histModalBody').innerHTML = `
+    <div class="hist-stats-row">
+      <div class="hist-stat or">
+        <div class="hist-stat-val">${totalCalls}</div>
+        <div class="hist-stat-lbl">Total Cold Calls</div>
+      </div>
+      <div class="hist-stat bl">
+        <div class="hist-stat-val">${totalCoun}</div>
+        <div class="hist-stat-lbl">Total Counselling / Leads</div>
+      </div>
+      <div class="hist-stat gr">
+        <div class="hist-stat-val">${totalClose}</div>
+        <div class="hist-stat-lbl">Total Closers Done</div>
+      </div>
+    </div>
+    ${_histEditMode?'<div class="hist-edit-hint">✏️ Edit numbers below and click Save when done</div>':''}
+    <table class="hist-table">
+      <thead>
+        <tr>
+          <th>Member</th><th>Role</th><th>Cold Calls</th>
+          <th>Couns/Leads</th><th>Closers</th><th>Pos. Leads</th>
+        </tr>
+      </thead>
+      <tbody>${memberRows}</tbody>
+    </table>
+    ${allClosers.length?`
+    <div class="hist-closer-list">
+      <div class="hist-closer-title">● Closers Done This Week (${allClosers.length})</div>
+      <div class="hist-closer-cards">
+        ${allClosers.map(c=>`
+          <div class="hist-closer-card">
+            <div class="hist-closer-name">${c.name}</div>
+            <div class="hist-closer-meta">${c.course||'—'} · by ${c.by}</div>
+            <div class="hist-closer-fee">${c.fee?'₹'+c.fee:'—'}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`:''}
+  `;
+}
+
+function enterHistEdit(){
+  _histEditMode = true;
+  renderHistModal();
+}
+
+function cancelHistEdit(){
+  _histEditMode = false;
+  renderHistModal();
+}
+
+function updateHistField(mi, field, val){
+  const hist = getWeekHistory();
+  if(!hist[_histEditIdx]) return;
+  hist[_histEditIdx].data[mi][field] = parseInt(val)||0;
+  weekHistory = hist;
+  try{ localStorage.setItem('sc_weekHistory', JSON.stringify(hist)); }catch(e){}
+}
+
+function saveHistEdit(){
+  const hist = getWeekHistory();
+  if(!hist[_histEditIdx]) return;
+  // Save renamed label if changed
+  const inp = document.getElementById('histLabelInput');
+  if(inp && inp.value.trim()) hist[_histEditIdx].label = inp.value.trim();
+  weekHistory = hist;
+  saveToDB();
+  _histEditMode = false;
+  updateWeekHistBar();
+  renderHistModal();
+  toast('✅ Week history updated');
+}
+
+async function deleteHistEntry(){
+  const hist = getWeekHistory();
+  const w = hist[_histEditIdx];
+  if(!w) return;
+  const ok = await customConfirm(`Delete "${w.label}"?`, 'This week\'s saved data will be permanently removed from history.', '🗑️', 'danger');
+  if(!ok) return;
+  hist.splice(_histEditIdx, 1);
+  weekHistory = hist;
+  saveToDB();
+  updateWeekHistBar();
+  closeHistModal();
+  toast('Week deleted from history');
+}
+
+async function clearCurrentWeek(){
+  const ok = await customConfirm("Clear this week's data?", "All numbers will be reset to zero for all members. This cannot be undone.", "🗑️", "danger");
+  if(!ok) return;
+  members.forEach(m=>{ m.calls=0;m.leads=0;m.cbook=0;m.coun=0;m.close=0;m.closers=[]; });
+  saveToStorage();
+  loadMember(cur);
+  buildNav();
+  toast('Week data cleared');
+}
+
+/* ═══════════════════════════════════════════
+   CLOSER MANAGEMENT
+═══════════════════════════════════════════ */
+function onClosersChange(){
+  onChange();
+  const cnt = parseInt(document.getElementById('iClose').value)||0;
+  const list = collectClosers();
+  while(list.length<cnt) list.push({name:'',course:'',fee:''});
+  while(list.length>cnt) list.pop();
+  renderCloserList(list,cnt);
+}
+
+function addCloser(){
+  const m=members[cur];
+  if(m.role==='ISE'){ toast('ISE team does not track Closers'); return; }
+  const cnt=parseInt(document.getElementById('iClose').value)||0;
+  document.getElementById('iClose').value=cnt+1;
+  const list=collectClosers();
+  list.push({name:'',course:'',fee:''});
+  renderCloserList(list,cnt+1);
+  onChange();
+}
+
+function collectClosers(){
+  const rows=document.querySelectorAll('.closer-item');
+  return Array.from(rows).map(r=>({
+    name:r.querySelector('.ci-name').value.trim(),
+    course:r.querySelector('.ci-course').value.trim(),
+    fee:r.querySelector('.ci-fee').value.trim(),
+  }));
+}
+
+function renderCloserList(list,cnt){
+  const container=document.getElementById('closerList');
+  container.innerHTML='';
+  if(!list||list.length===0){
+    container.innerHTML='<div class="no-closers">No closers yet. Enter closers count above or click + Add Closer.</div>';
+    return;
+  }
+  list.forEach((cl,idx)=>{
+    const row=document.createElement('div');
+    row.className='closer-item';
+    row.innerHTML=`
+      <div><div class="ci-lbl">Student Name</div><input class="ci-inp ci-name" placeholder="Enter name" value="${cl.name||''}" oninput="syncCloserCount()"></div>
+      <div><div class="ci-lbl">Course / Program</div><input class="ci-inp ci-course" placeholder="e.g. Data Science" value="${cl.course||''}"></div>
+      <div><div class="ci-lbl">Fee Collected (₹)</div><input class="ci-inp ci-fee" type="number" placeholder="e.g. 25000" value="${cl.fee||''}"></div>
+      <button class="ci-del" onclick="removeCloser(${idx})" title="Remove">✕</button>`;
+    container.appendChild(row);
+  });
+}
+
+function removeCloser(idx){
+  const list=collectClosers();
+  list.splice(idx,1);
+  document.getElementById('iClose').value=list.length;
+  renderCloserList(list,list.length);
+  onChange();
+}
+
+function syncCloserCount(){}
+
+/* ═══════════════════════════════════════════
+   INPUT HANDLERS
+═══════════════════════════════════════════ */
+function onChange(){
+  saveCur();
+  updateCharts();
+  buildNav();
+}
+
+function step(id,d){
+  const el=document.getElementById(id);
+  el.value=Math.max(0,(parseInt(el.value)||0)+d);
+}
+
+/* ═══════════════════════════════════════════
+   CHARTS - INDIVIDUAL
+═══════════════════════════════════════════ */
+function getV(){
+  const m=members[cur];
+  if(m.role==='ISE'){
+    return {
+      calls:parseInt(document.getElementById('iiCalls').value)||0,
+      leads:parseInt(document.getElementById('iiLeads').value)||0,
+      cbook:parseInt(document.getElementById('iiCBook').value)||0,
+      coun:0,
+      close:0 // ISE does not track Closers Done
+    };
+  }
+  return {
+    calls:parseInt(document.getElementById('iCalls').value)||0,
+    leads:0,cbook:0,
+    coun:parseInt(document.getElementById('iCoun').value)||0,
+    close:parseInt(document.getElementById('iClose').value)||0
+  };
+}
+
+function initBar(){
+  const m=members[cur];
+  const v=getV();
+  const labels = m.role==='ISE'?['Cold Calls','Positive Leads','Couns. Booked']:['Cold Calls','Counselling Done','Closers Done'];
+  const data   = m.role==='ISE'?[v.calls,v.leads,v.cbook]:[v.calls,v.coun,v.close];
+  const colors = m.role==='ISE'?['#F86F03','#8B5CF6','#F59E0B']:['#F86F03','#3B82F6','#16A34A'];
+  barInst=new Chart(document.getElementById('barC').getContext('2d'),{
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:7,borderSkipped:false,barPercentage:0.55}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8A8A8A',font:{family:"'DM Sans'",size:11}},border:{display:false}},y:{grid:{color:'#1E1E1E'},ticks:{color:'#5A5A5A',font:{family:"'DM Sans'",size:10}},border:{display:false}}},animation:{duration:350,easing:'easeOutQuart'}}
+  });
+}
+
+function initDonut(){
+  const m=members[cur];
+  const v=getV();
+  const labels = m.role==='ISE'?['Cold Calls','Leads','Couns. Booked']:['Cold Calls','Counselling','Closers'];
+  const data   = m.role==='ISE'?[v.calls||1,v.leads||1,v.cbook||1]:[v.calls||1,v.coun||1,v.close||1];
+  const colors = m.role==='ISE'?['#F86F03','#8B5CF6','#F59E0B']:['#F86F03','#3B82F6','#16A34A'];
+  donutInst=new Chart(document.getElementById('donutC').getContext('2d'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{position:'right',labels:{color:'#8A8A8A',font:{family:"'DM Sans'",size:10},padding:8,boxWidth:8,borderRadius:3}}},animation:{duration:350}}
+  });
+}
+
+function initTeamChart(){
+  teamInst=new Chart(document.getElementById('teamC').getContext('2d'),{
+    type:'bar',
+    data:buildTeamData(),
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8A8A8A',font:{family:"'DM Sans'",size:10},padding:12,boxWidth:8,borderRadius:3}}},scales:{x:{grid:{display:false},ticks:{color:'#8A8A8A',font:{family:"'DM Sans'",size:11}},border:{display:false}},y:{grid:{color:'#1E1E1E'},ticks:{color:'#5A5A5A',font:{family:"'DM Sans'",size:10}},border:{display:false}}},animation:{duration:350,easing:'easeOutQuart'}}
+  });
+}
+
+function initCompareChart(){
+  compareInst=new Chart(document.getElementById('compareC').getContext('2d'),{
+    type:'bar',
+    data:{labels:[],datasets:[]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8A8A8A',font:{family:"'DM Sans'",size:10},padding:12,boxWidth:8,borderRadius:3}}},scales:{x:{grid:{display:false},ticks:{color:'#8A8A8A',font:{family:"'DM Sans'",size:11}},border:{display:false}},y:{grid:{color:'#1E1E1E'},ticks:{color:'#5A5A5A',font:{family:"'DM Sans'",size:10}},border:{display:false}}},animation:{duration:400,easing:'easeOutQuart'}}
+  });
+}
+
+function buildTeamData(){
+  return {
+    labels:members.map(m=>m.name.split(' ')[0]),
+    datasets:[
+      {label:'Cold Calls',  data:members.map(m=>m.calls), backgroundColor:'#F86F03',borderRadius:5,barPercentage:0.7},
+      {label:'Counselling/Leads', data:members.map(m=>m.role==='ISE'?m.leads||0:m.coun), backgroundColor:'#3B82F6',borderRadius:5,barPercentage:0.7},
+      {label:'Closers Done', data:members.map(m=>m.close), backgroundColor:'#16A34A',borderRadius:5,barPercentage:0.7},
+    ]
+  };
+}
+
+function updateCharts(){
+  const m=members[cur];
+  const v=getV();
+  if(barInst){
+    const isISE=m.role==='ISE';
+    barInst.data.labels = isISE?['Cold Calls','Positive Leads','Couns. Booked']:['Cold Calls','Counselling Done','Closers Done'];
+    barInst.data.datasets[0].data = isISE?[v.calls,v.leads,v.cbook]:[v.calls,v.coun,v.close];
+    barInst.data.datasets[0].backgroundColor = isISE?['#F86F03','#8B5CF6','#F59E0B']:['#F86F03','#3B82F6','#16A34A'];
+    barInst.update();
+  }
+  if(donutInst){
+    const isISE=m.role==='ISE';
+    donutInst.data.datasets[0].data = isISE?[v.calls||1,v.leads||1,v.cbook||1]:[v.calls||1,v.coun||1,v.close||1];
+    donutInst.data.datasets[0].backgroundColor = isISE?['#F86F03','#8B5CF6','#F59E0B']:['#F86F03','#3B82F6','#16A34A'];
+    donutInst.update();
+  }
+  // conv rates
+  const calls = v.calls||0;
+  const coun  = m.role==='ISE'?(v.cbook||0):v.coun;
+  const close = v.close||0;
+  const r1=calls?Math.round(coun/calls*100):0;
+  const r2=coun?Math.round(close/coun*100):0;
+  const r3=calls?Math.round(close/calls*100):0;
+  const r4=(close/5).toFixed(1);
+  document.getElementById('r1').textContent=r1+'%';
+  document.getElementById('r2').textContent=r2+'%';
+  document.getElementById('r3').textContent=r3+'%';
+  document.getElementById('r4').textContent=r4;
+  document.getElementById('b1').style.width=Math.min(r1,100)+'%';
+  document.getElementById('b2').style.width=Math.min(r2,100)+'%';
+  document.getElementById('b3').style.width=Math.min(r3,100)+'%';
+  document.getElementById('b4').style.width=Math.min(parseFloat(r4)*10,100)+'%';
+}
+
+function refreshTeamView(){
+  const tot={calls:0,coun:0,close:0};
+  members.forEach(m=>{
+    tot.calls+=m.calls;
+    tot.coun+=(m.role==='ISE'?m.cbook||0:m.coun);
+    tot.close+=m.close;
+  });
+  document.getElementById('tCalls').textContent=tot.calls;
+  document.getElementById('tCoun').textContent=tot.coun;
+  document.getElementById('tClose').textContent=tot.close;
+  document.getElementById('teamWeekLbl').textContent=document.getElementById('weekLabel').value;
+  document.getElementById('teamBadge').textContent=document.getElementById('weekLabel').value.split('—')[0].trim().toUpperCase();
+  const topI=members.reduce((b,m,i)=>m.close>members[b].close?i:b,0);
+  const grid=document.getElementById('teamGrid');
+  grid.innerHTML='';
+  members.forEach((m,i)=>{
+    const isISE=m.role==='ISE';
+    const roleClass=isISE?'ise':'sales';
+    const c=document.createElement('div');
+    c.className=`tm-card ${roleClass}-card${i===topI?' top':''}`;
+    const councVal = isISE?(m.cbook||0):m.coun;
+    const councLbl = isISE?'Couns. Booked':'Counselling Done';
+    c.innerHTML=`<div class="tm-num">${i===topI?'🏆 TOP CLOSER':'MEMBER 0'+(i+1)}</div>
+      <div class="tm-role-tag ${roleClass}">${isISE?'ISE':'Sales'}</div>
+      <div class="tm-name">${m.name}</div>
+      <div class="tm-rows">
+        <div class="tm-row"><span class="tm-rl">Cold Calls</span><span class="tm-rv orange">${m.calls}</span></div>
+        ${isISE?`<div class="tm-row"><span class="tm-rl">Positive Leads</span><span class="tm-rv" style="color:#8B5CF6">${m.leads||0}</span></div>`:''}
+        <div class="tm-row"><span class="tm-rl">${councLbl}</span><span class="tm-rv blue">${councVal}</span></div>
+        <div class="tm-row"><span class="tm-rl">Closers Done</span><span class="tm-rv green">${m.close}</span></div>
+        <div class="tm-row"><span class="tm-rl">Conv.%</span><span class="tm-rv" style="color:#aaa;">${councVal?Math.round(m.close/councVal*100):0}%</span></div>
+      </div>`;
+    c.onclick=()=>switchMember(i);
+    grid.appendChild(c);
+  });
+  if(teamInst){ teamInst.data=buildTeamData(); teamInst.update(); }
+}
+
+function syncWeek(){
+  const w=document.getElementById('weekLabel').value;
+  document.getElementById('indWeek').textContent=w;
+  document.getElementById('teamWeekLbl').textContent=w;
+  document.getElementById('chartBadge').textContent=w.split('—')[0].trim().toUpperCase();
+  document.getElementById('teamBadge').textContent=w.split('—')[0].trim().toUpperCase();
+  saveToStorage();
+}
+
+/* ═══════════════════════════════════════════
+   COMPARE VIEW
+═══════════════════════════════════════════ */
+function buildCompareInputs(){
+  // load saved prev week label
+  try{
+    const savedLabel = localStorage.getItem('sc_prevWeekLabel') || prevWeekLabel;
+    if(savedLabel) document.getElementById('prevWeekLabel').value=savedLabel;
+    document.getElementById('currWeekLabel').value=document.getElementById('weekLabel').value;
+  }catch(e){}
+
+  const prevContainer = document.getElementById('prevWeekInputs');
+  const currContainer = document.getElementById('currWeekInputs');
+  prevContainer.innerHTML='';
+  currContainer.innerHTML='';
+
+  members.forEach((m,i)=>{
+    const isISE=m.role==='ISE';
+    const prev = prevWeekData[m.name]||{calls:0,leads:0,cbook:0,coun:0,close:0};
+    const roleTag=`<span style="font-size:9px;font-weight:700;font-family:'Sora',sans-serif;letter-spacing:0.06em;color:${isISE?'#8B5CF6':'var(--o)'}">[${m.role}]</span>`;
+
+    // Previous week inputs
+    const pDiv=document.createElement('div');
+    pDiv.style.cssText='background:var(--c2);border-radius:8px;padding:10px 12px;margin-bottom:8px;';
+    pDiv.innerHTML=`<div style="font-family:'Sora',sans-serif;font-size:11px;font-weight:700;margin-bottom:8px;">${m.name} ${roleTag}</div>
+      <div style="display:grid;grid-template-columns:${isISE?'1fr 1fr 1fr 1fr':'1fr 1fr 1fr'};gap:6px;">
+        <div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">CALLS</div><input class="wsr-inp-sm prev" id="prev_calls_${i}" type="number" value="${prev.calls}" oninput="refreshCompare()" min="0"></div>
+        ${isISE?`<div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">LEADS</div><input class="wsr-inp-sm prev" id="prev_leads_${i}" type="number" value="${prev.leads||0}" oninput="refreshCompare()" min="0"></div>
+        <div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">C.BOOKED</div><input class="wsr-inp-sm prev" id="prev_cbook_${i}" type="number" value="${prev.cbook||0}" oninput="refreshCompare()" min="0"></div>`
+        :`<div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">COUNSEL</div><input class="wsr-inp-sm prev" id="prev_coun_${i}" type="number" value="${prev.coun||0}" oninput="refreshCompare()" min="0"></div>`}
+        <div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">CLOSERS</div><input class="wsr-inp-sm prev" id="prev_close_${i}" type="number" value="${prev.close}" oninput="refreshCompare()" min="0"></div>
+      </div>`;
+    prevContainer.appendChild(pDiv);
+
+    // Current week (auto-filled, read-only styled)
+    const cDiv=document.createElement('div');
+    cDiv.style.cssText='background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.15);border-radius:8px;padding:10px 12px;margin-bottom:8px;';
+    cDiv.innerHTML=`<div style="font-family:'Sora',sans-serif;font-size:11px;font-weight:700;margin-bottom:8px;">${m.name} ${roleTag}</div>
+      <div style="display:grid;grid-template-columns:${isISE?'1fr 1fr 1fr 1fr':'1fr 1fr 1fr'};gap:6px;">
+        <div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">CALLS</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:18px;color:var(--wh);">${m.calls}</div></div>
+        ${isISE?`<div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">LEADS</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:18px;color:#8B5CF6;">${m.leads||0}</div></div>
+        <div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">C.BOOKED</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:18px;color:#F59E0B;">${m.cbook||0}</div></div>`
+        :`<div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">COUNSEL</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:18px;color:var(--bl);">${m.coun||0}</div></div>`}
+        <div><div style="font-size:8px;color:var(--g1);margin-bottom:3px;">CLOSERS</div><div style="font-family:'Sora',sans-serif;font-weight:900;font-size:18px;color:var(--gr);">${m.close}</div></div>
+      </div>`;
+    currContainer.appendChild(cDiv);
+  });
+}
+
+function getPrevData(i){
+  const isISE=members[i].role==='ISE';
+  return {
+    calls: parseInt(document.getElementById(`prev_calls_${i}`)?.value)||0,
+    leads: isISE?(parseInt(document.getElementById(`prev_leads_${i}`)?.value)||0):0,
+    cbook: isISE?(parseInt(document.getElementById(`prev_cbook_${i}`)?.value)||0):0,
+    coun:  !isISE?(parseInt(document.getElementById(`prev_coun_${i}`)?.value)||0):0,
+    close: parseInt(document.getElementById(`prev_close_${i}`)?.value)||0,
+  };
+}
+
+function refreshCompare(){
+  const prevLabel = document.getElementById('prevWeekLabel').value;
+  const currLabel = document.getElementById('currWeekLabel').value;
+
+  // Team totals
+  let prevTot={calls:0,coun:0,close:0};
+  let currTot={calls:0,coun:0,close:0};
+  members.forEach((m,i)=>{
+    const p=getPrevData(i);
+    prevTot.calls+=p.calls;
+    prevTot.coun+=(m.role==='ISE'?p.cbook:p.coun);
+    prevTot.close+=p.close;
+    currTot.calls+=m.calls;
+    currTot.coun+=(m.role==='ISE'?(m.cbook||0):m.coun);
+    currTot.close+=m.close;
+  });
+
+  // Stat grid
+  const statGrid=document.getElementById('compStatGrid');
+  const metrics=[
+    {lbl:'Cold Calls',prev:prevTot.calls,curr:currTot.calls,col:'#F86F03'},
+    {lbl:'Counselling / C.Booked',prev:prevTot.coun,curr:currTot.coun,col:'#3B82F6'},
+    {lbl:'Closers Done',prev:prevTot.close,curr:currTot.close,col:'#16A34A'},
+  ];
+  statGrid.innerHTML='';
+  metrics.forEach(mt=>{
+    const diff=mt.curr-mt.prev;
+    const pct=mt.prev?Math.round(Math.abs(diff)/mt.prev*100):0;
+    const cls=diff>0?'up':diff<0?'down':'same';
+    const arrow=diff>0?'▲':diff<0?'▼':'—';
+    const s=document.createElement('div');
+    s.className='comp-stat';
+    s.innerHTML=`<div class="comp-stat-lbl">${mt.lbl}</div>
+      <div class="comp-row">
+        <div class="comp-val-grp"><div class="comp-val-week">${prevLabel}</div><div class="comp-val prev">${mt.prev}</div></div>
+        <div class="comp-val-grp"><div class="comp-val-week">${currLabel}</div><div class="comp-val curr" style="color:${mt.col}">${mt.curr}</div></div>
+        <div class="comp-diff ${cls}">${arrow} ${Math.abs(diff)} ${pct?'('+pct+'%)':''}</div>
+      </div>`;
+    statGrid.appendChild(s);
+  });
+
+  // Per-member cards
+  const memberGrid=document.getElementById('compMemberGrid');
+  memberGrid.innerHTML='';
+  members.forEach((m,i)=>{
+    const p=getPrevData(i);
+    const isISE=m.role==='ISE';
+    const roleClass=isISE?'ise':'sales';
+    const mets=isISE?[
+      {lbl:'Cold Calls',prev:p.calls,curr:m.calls,col:'#F86F03'},
+      {lbl:'Positive Leads',prev:p.leads||0,curr:m.leads||0,col:'#8B5CF6'},
+      {lbl:'Couns. Booked',prev:p.cbook||0,curr:m.cbook||0,col:'#F59E0B'},
+      {lbl:'Closers Done',prev:p.close,curr:m.close,col:'#16A34A'},
+    ]:[
+      {lbl:'Cold Calls',prev:p.calls,curr:m.calls,col:'#F86F03'},
+      {lbl:'Counselling Done',prev:p.coun||0,curr:m.coun||0,col:'#3B82F6'},
+      {lbl:'Closers Done',prev:p.close,curr:m.close,col:'#16A34A'},
+    ];
+    const card=document.createElement('div');
+    card.className='comp-result-card';
+    let metHtml='';
+    mets.forEach(mt=>{
+      const diff=mt.curr-mt.prev;
+      const cls=diff>0?'up':diff<0?'down':'same';
+      const arrow=diff>0?'▲ +':diff<0?'▼ ':'— ';
+      metHtml+=`<div class="crc-metric">
+        <span class="crc-ml">${mt.lbl}</span>
+        <span class="crc-mv">
+          <span class="crc-prev">${mt.prev}→</span>
+          <span class="crc-curr" style="color:${mt.col}">${mt.curr}</span>
+          <span class="crc-arrow ${cls}">${arrow}${Math.abs(diff)}</span>
+        </span>
+      </div>`;
+    });
+    card.innerHTML=`<div class="crc-name">${m.name}</div>
+      <div class="crc-role ${roleClass}">${isISE?'ISE — Inside Sales Executive':'Sales Team'}</div>
+      <div class="crc-metrics">${metHtml}</div>`;
+    memberGrid.appendChild(card);
+  });
+
+  // Compare chart
+  if(compareInst){
+    const names=members.map(m=>m.name.split(' ')[0]);
+    compareInst.data={
+      labels:names,
+      datasets:[
+        {label:`${prevLabel} — Cold Calls`, data:members.map((_,i)=>getPrevData(i).calls), backgroundColor:'rgba(248,111,3,0.45)',borderRadius:4,barPercentage:0.4},
+        {label:`${currLabel} — Cold Calls`, data:members.map(m=>m.calls), backgroundColor:'#F86F03',borderRadius:4,barPercentage:0.4},
+        {label:`${prevLabel} — Closers`, data:members.map((_,i)=>getPrevData(i).close), backgroundColor:'rgba(22,163,74,0.45)',borderRadius:4,barPercentage:0.4},
+        {label:`${currLabel} — Closers`, data:members.map(m=>m.close), backgroundColor:'#16A34A',borderRadius:4,barPercentage:0.4},
+      ]
+    };
+    compareInst.update();
+  }
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+let _tt=null;
+function toast(msg){
+  document.getElementById('toastMsg').textContent=msg;
+  const t=document.getElementById('toast');
+  t.classList.add('on');
+  clearTimeout(_tt);
+  _tt=setTimeout(()=>t.classList.remove('on'),2500);
+}
+
+/* ═══════════════════════════════════════════
+   GENERATE PPT
+═══════════════════════════════════════════ */
+async function generatePPT(){
+  saveCur();
+  const week=document.getElementById('weekLabel').value;
+  document.getElementById('loaderText').textContent='Building your PPT…';
+  document.getElementById('loader').classList.add('on');
+  await new Promise(r=>setTimeout(r,80));
+  try{
+    const pres=new PptxGenJS();
+    pres.layout='LAYOUT_16x9';
+    pres.title=`StackCode ${week} Performance`;
+    const BK='0A0A0A',OR='F86F03',WH='FFFFFF',GR='16A34A',BL='3B82F6',MG='8A8A8A',DG='222222',PU='8B5CF6',AM='F59E0B';
+    const mkS=()=>({type:'outer',blur:8,offset:3,angle:135,color:'000000',opacity:0.14});
+
+    // ── Count of PERSONS (not sum) doing each activity ──
+    const personsCalledCount  = members.filter(m=>m.calls>0).length;
+    const personsCounCount    = members.filter(m=>(m.role==='ISE'?(m.cbook||0):m.coun)>0).length;
+    const personsCloserCount  = members.filter(m=>m.close>0).length;
+
+    /* ── SLIDE 1: COVER ── */
+    {
+      const s=pres.addSlide();
+      s.background={color:BK};
+      // Orange left accent bar
+      s.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:0.16,h:5.625,fill:{color:OR},line:{color:OR}});
+      // Faint BG text
+      s.addText('WEEKLY',{x:0.3,y:0.9,w:9.4,h:2.2,fontSize:110,fontFace:'Arial Black',bold:true,color:'161616',align:'center',charSpacing:16});
+      // Glow orb
+      s.addShape(pres.shapes.OVAL,{x:7.4,y:-1.4,w:3.8,h:3.8,fill:{color:OR,transparency:85},line:{color:OR,transparency:85}});
+      // Eyebrow badge
+      s.addShape(pres.shapes.RECTANGLE,{x:3.2,y:0.48,w:3.6,h:0.36,fill:{color:OR,transparency:80},line:{color:OR,transparency:50}});
+      s.addText('PERFORMANCE REPORT',{x:3.2,y:0.48,w:3.6,h:0.36,fontSize:8,fontFace:'Arial',bold:true,color:OR,align:'center',valign:'middle',charSpacing:3});
+      // Brand
+      s.addText([{text:'Stack',options:{color:WH}},{text:'Code',options:{color:OR}}],{x:0.4,y:0.9,w:9.2,h:1.1,fontSize:68,fontFace:'Arial Black',bold:true,align:'center',valign:'middle'});
+      // Week label
+      s.addText(week,{x:0.5,y:2.0,w:9,h:0.44,fontSize:16,fontFace:'Calibri',color:MG,align:'center',charSpacing:5});
+      // Divider
+      s.addShape(pres.shapes.RECTANGLE,{x:3.8,y:2.52,w:2.4,h:0.04,fill:{color:OR},line:{color:OR}});
+      s.addText('ISE · Cold Calling · Counselling · Sales Closers',{x:0.5,y:2.65,w:9,h:0.36,fontSize:13,fontFace:'Calibri',color:'4A4A4A',align:'center',charSpacing:2});
+
+      // ── 3 STAT BOXES: Total PERSONS (count of people) ──
+      const boxes=[
+        {lbl:'TOTAL PERSON',sub:'COLD CALLING',val:personsCalledCount, x:1.1, col:OR},
+        {lbl:'TOTAL PERSON',sub:'COUNSELLING DONE',val:personsCounCount, x:4.05,col:BL},
+        {lbl:'TOTAL PERSON',sub:'CLOSER DONE',    val:personsCloserCount,x:7.0, col:GR},
+      ];
+      boxes.forEach(b=>{
+        s.addShape(pres.shapes.RECTANGLE,{x:b.x,y:3.38,w:1.85,h:1.7,fill:{color:'141414'},line:{color:DG},shadow:mkS()});
+        s.addShape(pres.shapes.RECTANGLE,{x:b.x,y:3.38,w:1.85,h:0.07,fill:{color:b.col},line:{color:b.col}});
+        // Big number (count of persons)
+        s.addText(String(b.val),{x:b.x,y:3.45,w:1.85,h:0.85,fontSize:48,fontFace:'Arial Black',bold:true,color:b.col,align:'center',valign:'middle'});
+        // "TOTAL PERSON" label
+        s.addText(b.lbl,{x:b.x,y:4.32,w:1.85,h:0.24,fontSize:7,fontFace:'Calibri',bold:true,color:MG,align:'center',charSpacing:2});
+        // activity sub-label in white
+        s.addText(b.sub,{x:b.x,y:4.55,w:1.85,h:0.3,fontSize:8,fontFace:'Calibri',bold:true,color:WH,align:'center',charSpacing:1});
+      });
+      s.addText('StackCode Training Institute  ·  Ahmedabad & Rajkot',{x:0.25,y:5.3,w:9.5,h:0.25,fontSize:8,fontFace:'Calibri',color:'333333',align:'center'});
+    }
+
+    /* ── SLIDES: INDIVIDUAL MEMBERS ── */
+    for(let i=0;i<members.length;i++){
+      const m=members[i];
+      const isISE=m.role==='ISE';
+      const accentCol=isISE?PU:OR;
+      const s=pres.addSlide();
+      s.background={color:BK};
+
+      // ── HEADER (same style as cover: orange left bar, faint orb, eyebrow, title, week) ──
+      s.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:0.16,h:5.625,fill:{color:OR},line:{color:OR}});
+      s.addShape(pres.shapes.OVAL,{x:7.6,y:-1.0,w:3.2,h:3.2,fill:{color:OR,transparency:93},line:{color:OR,transparency:93}});
+      // Eyebrow
+      s.addText(isISE?'INSIDE SALES EXECUTIVE  ·  INDIVIDUAL REPORT':'SALES TEAM  ·  INDIVIDUAL REPORT',
+        {x:0.38,y:0.16,w:7.5,h:0.24,fontSize:7,fontFace:'Calibri',bold:true,color:isISE?PU:OR,align:'left',charSpacing:3});
+      // Week label top-right
+      s.addText(week,{x:7.5,y:0.16,w:2.16,h:0.24,fontSize:8,fontFace:'Calibri',color:MG,align:'right'});
+      // Member name as title
+      s.addText(m.name,{x:0.38,y:0.42,w:7.8,h:0.54,fontSize:26,fontFace:'Arial Black',bold:true,color:WH,align:'left'});
+      // Number badge top-right
+      s.addShape(pres.shapes.RECTANGLE,{x:8.84,y:0.1,w:0.82,h:0.82,fill:{color:accentCol},line:{color:accentCol}});
+      s.addText(String(i+1).padStart(2,'0'),{x:8.84,y:0.1,w:0.82,h:0.82,fontSize:22,fontFace:'Arial Black',bold:true,color:WH,align:'center',valign:'middle'});
+      // Divider
+      s.addShape(pres.shapes.RECTANGLE,{x:0.38,y:1.0,w:9.2,h:0.025,fill:{color:'1E1E1E'},line:{color:'1E1E1E'}});
+      // Role pill
+      s.addShape(pres.shapes.RECTANGLE,{x:0.38,y:1.08,w:isISE?2.0:1.3,h:0.28,fill:{color:accentCol,transparency:82},line:{color:accentCol,transparency:65}});
+      s.addText(isISE?'INSIDE SALES EXECUTIVE':'SALES TEAM',
+        {x:0.38,y:1.08,w:isISE?2.0:1.3,h:0.28,fontSize:7,fontFace:'Calibri',bold:true,color:accentCol,align:'center',valign:'middle',charSpacing:2});
+
+      // ── METRIC BOXES (horizontal row) ──
+      const metrics=isISE?[
+        {lbl:'COLD CALLS',val:m.calls,col:OR},
+        {lbl:'POSITIVE LEADS',val:m.leads||0,col:PU},
+        {lbl:'COUNS. BOOKED',val:m.cbook||0,col:AM},
+      ]:[
+        {lbl:'COLD CALLS',val:m.calls,col:OR},
+        {lbl:'COUNSELLING',val:m.coun,col:BL},
+        {lbl:'CLOSERS DONE',val:m.close,col:GR},
+      ];
+      const mBoxW=3.0, mBoxGap=0.1, mBoxStartX=0.38, mBoxY=1.44;
+      metrics.forEach((mt,mi)=>{
+        const mx=mBoxStartX+mi*(mBoxW+mBoxGap);
+        s.addShape(pres.shapes.RECTANGLE,{x:mx,y:mBoxY,w:mBoxW,h:1.08,fill:{color:'141414'},line:{color:'1E1E1E'}});
+        s.addShape(pres.shapes.RECTANGLE,{x:mx,y:mBoxY,w:mBoxW,h:0.06,fill:{color:mt.col},line:{color:mt.col}});
+        s.addText(String(mt.val),{x:mx,y:mBoxY+0.06,w:mBoxW,h:0.72,fontSize:40,fontFace:'Arial Black',bold:true,color:mt.col,align:'center',valign:'middle'});
+        s.addText(mt.lbl,{x:mx,y:mBoxY+0.8,w:mBoxW,h:0.26,fontSize:8,fontFace:'Calibri',bold:true,color:MG,align:'center',charSpacing:2});
+      });
+
+      // ── BAR CHART ──
+      const barLabels=isISE?['Cold Calls','Positive Leads','Couns. Booked']:['Cold Calls','Counselling','Closers Done'];
+      const barVals=isISE?[m.calls,m.leads||0,m.cbook||0]:[m.calls,m.coun,m.close];
+      const barColors=isISE?[OR,PU,AM]:[OR,BL,GR];
+      s.addChart(pres.charts.BAR,[{name:'This Week',labels:barLabels,values:barVals}],{
+        x:0.38,y:2.62,w:isISE?9.22:5.4,h:2.75,barDir:'col',
+        chartColors:barColors,
+        chartArea:{fill:{color:'141414'},roundedCorners:false},
+        plotArea:{fill:{color:'141414'}},
+        catAxisLabelColor:MG,valAxisLabelColor:'5A5A5A',
+        valGridLine:{color:'252525',size:0.5},catGridLine:{style:'none'},
+        showValue:true,dataLabelColor:WH,dataLabelFontSize:12,dataLabelFontBold:true,
+        showLegend:false,valAxisMinVal:0,
+      });
+
+      // ── CLOSER DETAILS (Sales only, right side) ──
+      if(!isISE){
+        const cls=m.closers.filter(c=>c.name);
+        s.addText('● CLOSER DETAILS',{x:6.0,y:2.62,w:3.6,h:0.3,fontSize:9,fontFace:'Calibri',bold:true,color:GR,align:'left',charSpacing:2});
+        if(cls.length>0){
+          const tableRows=[[
+            {text:'Student',options:{bold:true,color:WH,fill:{color:'1A1A1A'},fontSize:9}},
+            {text:'Course',options:{bold:true,color:WH,fill:{color:'1A1A1A'},fontSize:9}},
+            {text:'Fee',options:{bold:true,color:WH,fill:{color:'1A1A1A'},fontSize:9}},
+          ]];
+          cls.forEach((c,ci)=>{
+            const rb=ci%2===0?'181818':'141414';
+            tableRows.push([
+              {text:c.name||'—',options:{color:WH,bold:true,fill:{color:rb},fontSize:9}},
+              {text:c.course||'—',options:{color:MG,fill:{color:rb},fontSize:9}},
+              {text:c.fee?'₹'+c.fee:'—',options:{color:GR,bold:true,fill:{color:rb},fontSize:9}},
+            ]);
+          });
+          s.addTable(tableRows,{x:6.0,y:2.98,w:3.6,colW:[1.4,1.4,0.8],fontSize:9,fontFace:'Calibri',border:{pt:0.5,color:'2A2A2A'},align:'left'});
+        } else {
+          s.addText('No closers this week.',{x:6.0,y:3.0,w:3.6,h:0.3,fontSize:9,fontFace:'Calibri',color:'444444',align:'left',italic:true});
+        }
+      }
+
+      // Footer
+      s.addText(`StackCode  ·  ${week}  ·  Individual Report`,{x:0.4,y:5.35,w:9.2,h:0.2,fontSize:7,fontFace:'Calibri',color:'333333',align:'right'});
+    }
+
+    /* ── LAST SLIDE: WEEK-ON-WEEK COMPARISON (same dark theme) ── */
+    {
+      const s=pres.addSlide();
+      s.background={color:BK};
+
+      // ── HEADER (matching cover style) ──
+      s.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:0.16,h:5.625,fill:{color:OR},line:{color:OR}});
+      s.addShape(pres.shapes.OVAL,{x:7.6,y:-1.0,w:3.2,h:3.2,fill:{color:OR,transparency:93},line:{color:OR,transparency:93}});
+      s.addText('PERFORMANCE ANALYTICS  ·  WEEK-ON-WEEK',{x:0.38,y:0.16,w:7.5,h:0.24,fontSize:7,fontFace:'Calibri',bold:true,color:OR,align:'left',charSpacing:3});
+      s.addText(week,{x:7.5,y:0.16,w:2.16,h:0.24,fontSize:8,fontFace:'Calibri',color:MG,align:'right'});
+      s.addText('Week-on-Week Comparison',{x:0.38,y:0.42,w:8.5,h:0.54,fontSize:26,fontFace:'Arial Black',bold:true,color:WH,align:'left'});
+      s.addShape(pres.shapes.RECTANGLE,{x:0.38,y:1.0,w:9.2,h:0.025,fill:{color:'1E1E1E'},line:{color:'1E1E1E'}});
+
+      // Read prev week label
+      const prevLabel=localStorage.getItem('sc_prevWeekLabel')||'Last Week';
+
+      // Totals
+      let prevTot={calls:0,coun:0,close:0};
+      let currTot={calls:0,coun:0,close:0};
+      members.forEach(m=>{
+        const p=prevWeekData[m.name]||{calls:0,coun:0,close:0,cbook:0};
+        prevTot.calls+=p.calls||0;
+        prevTot.coun+=(m.role==='ISE'?p.cbook||0:p.coun||0);
+        prevTot.close+=p.close||0;
+        currTot.calls+=m.calls;
+        currTot.coun+=(m.role==='ISE'?m.cbook||0:m.coun||0);
+        currTot.close+=m.close;
+      });
+
+      // ── 3 SUMMARY STAT BOXES (same style as cover) ──
+      const cmpMets=[
+        {lbl:'COLD CALLS',sub:'Last → Current',prev:prevTot.calls,curr:currTot.calls,col:OR},
+        {lbl:'COUNSELLING',sub:'Last → Current',prev:prevTot.coun,curr:currTot.coun,col:BL},
+        {lbl:'CLOSERS DONE',sub:'Last → Current',prev:prevTot.close,curr:currTot.close,col:GR},
+      ];
+      const bx=[0.4,3.5,6.6];
+      cmpMets.forEach((mt,mi)=>{
+        const diff=mt.curr-mt.prev;
+        const arrow=diff>0?'▲ +':diff<0?'▼ ':' ';
+        const arrowCol=diff>0?GR:diff<0?'DC2626':MG;
+        const bw=2.85;
+        s.addShape(pres.shapes.RECTANGLE,{x:bx[mi],y:1.08,w:bw,h:1.48,fill:{color:'141414'},line:{color:'222222'}});
+        s.addShape(pres.shapes.RECTANGLE,{x:bx[mi],y:1.08,w:bw,h:0.06,fill:{color:mt.col},line:{color:mt.col}});
+        s.addText(mt.lbl,{x:bx[mi],y:1.16,w:bw,h:0.24,fontSize:8,fontFace:'Calibri',bold:true,color:MG,align:'center',charSpacing:2});
+        s.addText(String(mt.prev),{x:bx[mi]+0.1,y:1.4,w:0.9,h:0.52,fontSize:26,fontFace:'Arial Black',bold:true,color:'555555',align:'center',valign:'middle'});
+        s.addText('→',{x:bx[mi]+0.95,y:1.48,w:0.4,h:0.36,fontSize:14,fontFace:'Calibri',color:MG,align:'center'});
+        s.addText(String(mt.curr),{x:bx[mi]+1.3,y:1.4,w:1.1,h:0.52,fontSize:26,fontFace:'Arial Black',bold:true,color:mt.col,align:'center',valign:'middle'});
+        s.addShape(pres.shapes.RECTANGLE,{x:bx[mi]+0.4,y:1.94,w:bw-0.8,h:0.28,fill:{color:diff>0?'0D2D1A':diff<0?'2D0D0D':'1A1A1A'},line:{color:diff>0?'16A34A':diff<0?'DC2626':'333333'}});
+        s.addText(`${arrow}${Math.abs(diff)}`,{x:bx[mi]+0.4,y:1.94,w:bw-0.8,h:0.28,fontSize:11,fontFace:'Calibri',bold:true,color:arrowCol,align:'center',valign:'middle'});
+      });
+
+      // Week labels
+      s.addText(`${prevLabel}  →  ${week}`,{x:0.4,y:2.62,w:9.2,h:0.24,fontSize:9,fontFace:'Calibri',color:'444444',align:'center',italic:true});
+
+      // ── PER-MEMBER TABLE (dark themed) ──
+      s.addText('MEMBER-WISE BREAKDOWN',{x:0.4,y:2.92,w:9.2,h:0.26,fontSize:8,fontFace:'Calibri',bold:true,color:OR,align:'left',charSpacing:3});
+      const HDR='1A1A1A';
+      const tRows=[[
+        {text:'Member',options:{bold:true,color:OR,fill:{color:HDR},fontSize:10}},
+        {text:'Role',options:{bold:true,color:OR,fill:{color:HDR},fontSize:10}},
+        {text:`${prevLabel} Calls`,options:{bold:true,color:MG,fill:{color:HDR},fontSize:9}},
+        {text:`${week} Calls`,options:{bold:true,color:OR,fill:{color:HDR},fontSize:9}},
+        {text:`${prevLabel} Couns/Leads`,options:{bold:true,color:MG,fill:{color:HDR},fontSize:9}},
+        {text:`${week} Couns/Leads`,options:{bold:true,color:BL,fill:{color:HDR},fontSize:9}},
+        {text:`${prevLabel} Closers`,options:{bold:true,color:MG,fill:{color:HDR},fontSize:9}},
+        {text:`${week} Closers`,options:{bold:true,color:GR,fill:{color:HDR},fontSize:9}},
+        {text:'Δ',options:{bold:true,color:WH,fill:{color:HDR},fontSize:9}},
+      ]];
+      members.forEach((m,i)=>{
+        const p=prevWeekData[m.name]||{calls:0,coun:0,close:0,cbook:0,leads:0};
+        const prevCoun=m.role==='ISE'?(p.cbook||0):(p.coun||0);
+        const currCoun=m.role==='ISE'?(m.cbook||0):m.coun;
+        const prevClose=m.role==='ISE'?0:(p.close||0);
+        const currClose=m.role==='ISE'?0:m.close;
+        const diff=currClose-prevClose;
+        const rb=i%2===0?'181818':'141414';
+        tRows.push([
+          {text:m.name,options:{bold:true,color:WH,fill:{color:rb},fontSize:10}},
+          {text:m.role==='ISE'?'ISE':'Sales',options:{color:m.role==='ISE'?PU:OR,fill:{color:rb},bold:true,fontSize:9}},
+          {text:String(p.calls||0),options:{color:'555555',fill:{color:rb},fontSize:9}},
+          {text:String(m.calls),options:{color:OR,bold:true,fill:{color:rb},fontSize:9}},
+          {text:String(prevCoun),options:{color:'555555',fill:{color:rb},fontSize:9}},
+          {text:String(currCoun),options:{color:BL,bold:true,fill:{color:rb},fontSize:9}},
+          {text:m.role==='ISE'?'—':String(prevClose),options:{color:'555555',fill:{color:rb},fontSize:9}},
+          {text:m.role==='ISE'?'—':String(currClose),options:{color:GR,bold:true,fill:{color:rb},fontSize:9}},
+          {text:m.role==='ISE'?'—':(diff>0?'+':'')+diff,options:{color:diff>0?GR:diff<0?'DC2626':MG,bold:true,fill:{color:rb},fontSize:9}},
+        ]);
+      });
+      s.addTable(tRows,{x:0.4,y:3.22,w:9.2,colW:[1.6,0.7,1.0,1.0,1.1,1.1,1.0,1.0,0.7],fontSize:9,fontFace:'Calibri',border:{pt:0.5,color:'2A2A2A'},align:'center'});
+
+      // Footer
+      s.addText('StackCode Training Institute  ·  Ahmedabad & Rajkot',{x:0.4,y:5.35,w:9.2,h:0.2,fontSize:7,fontFace:'Calibri',color:'333333',align:'center'});
+    }
+
+    await pres.writeFile({fileName:`StackCode_${week.replace(/[^a-z0-9]/gi,'_')}.pptx`});
+    toast('PPT downloaded successfully!');
+  } catch(e){
+    console.error(e);
+    toast('Error generating PPT. Check console.');
+  } finally {
+    document.getElementById('loader').classList.remove('on');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   GENERATE EXCEL
+═══════════════════════════════════════════ */
+function generateExcel(){
+  saveCur();
+  const week=document.getElementById('weekLabel').value;
+  const wb=XLSX.utils.book_new();
+
+  // Sheet 1: Summary
+  const sumData=[
+    ['StackCode Performance Report',week],
+    [],
+    ['Member','Role','Cold Calls','Leads/Counsel','Couns.Booked','Closers Done','Conv Rate'],
+  ];
+  members.forEach(m=>{
+    const coun=m.role==='ISE'?(m.cbook||0):m.coun;
+    const r=coun?Math.round(m.close/coun*100):0;
+    sumData.push([m.name,m.role,m.calls,m.role==='ISE'?m.leads||0:m.coun,m.role==='ISE'?m.cbook||0:'-',m.close,r+'%']);
+  });
+  const tot={calls:members.reduce((s,m)=>s+m.calls,0),coun:members.reduce((s,m)=>s+(m.role==='ISE'?m.cbook||0:m.coun),0),close:members.reduce((s,m)=>s+m.close,0)};
+  sumData.push([]);
+  sumData.push(['TOTAL','',tot.calls,'',tot.coun,tot.close,'']);
+  const ws1=XLSX.utils.aoa_to_sheet(sumData);
+  ws1['!cols']=[{wch:20},{wch:8},{wch:12},{wch:16},{wch:14},{wch:14},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Summary');
+
+  // Sheet 2: All Closer Details
+  const allC=[];
+  members.forEach(m=>m.closers.filter(c=>c.name).forEach(c=>allC.push({...c,member:m.name,role:m.role})));
+  const cdData=[['#','Student Name','Course / Program','Fee (₹)','Closed By','Role']];
+  allC.forEach((c,i)=>cdData.push([i+1,c.name,c.course,c.fee?Number(c.fee):0,c.member,c.role]));
+  const ws2=XLSX.utils.aoa_to_sheet(cdData);
+  ws2['!cols']=[{wch:5},{wch:22},{wch:24},{wch:12},{wch:20},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Closer Details');
+
+  // Sheet 3: Week Comparison
+  if(Object.keys(prevWeekData).length>0){
+    const compData=[['Member','Role','Prev Calls','Curr Calls','Prev Closers','Curr Closers','Δ Closers']];
+    members.forEach(m=>{
+      const p=prevWeekData[m.name]||{calls:0,close:0};
+      compData.push([m.name,m.role,p.calls||0,m.calls,p.close||0,m.close,m.close-(p.close||0)]);
+    });
+    const ws3=XLSX.utils.aoa_to_sheet(compData);
+    ws3['!cols']=[{wch:20},{wch:8},{wch:12},{wch:12},{wch:14},{wch:14},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws3,'Week Comparison');
+  }
+
+  // Individual sheets
+  members.forEach(m=>{
+    const isISE=m.role==='ISE';
+    const d=[[m.name,week],[],['Role',m.role],['Metric','Value'],['Cold Calls',m.calls]];
+    if(isISE){ d.push(['Positive Leads',m.leads||0]); d.push(['Counselling Booked',m.cbook||0]); }
+    else { d.push(['Counselling Done',m.coun]); }
+    d.push(['Closers Done',m.close]);
+    d.push([],['Closer Details:'],['Name','Course','Fee']);
+    m.closers.filter(c=>c.name).forEach(c=>d.push([c.name,c.course,c.fee]));
+    const ws=XLSX.utils.aoa_to_sheet(d);
+    ws['!cols']=[{wch:20},{wch:18},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws,m.name.split(' ')[0].substring(0,20));
+  });
+
+  XLSX.writeFile(wb,`StackCode_${week.replace(/[^a-z0-9]/gi,'_')}.xlsx`);
+  toast('Excel exported!');
+}
+</script>
+</body>
+</html>

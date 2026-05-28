@@ -1,0 +1,14 @@
+{
+  "name": "stackcode-performance-manager",
+  "version": "1.0.0",
+  "description": "StackCode Performance Manager with Shared Vercel KV Database",
+  "type": "module",
+  "main": "api/data.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@vercel/kv": "^1.0.1"
+  }
+}

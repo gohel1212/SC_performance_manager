@@ -1,0 +1,5 @@
+node_modules/
+data.json
+.vercel/
+.env
+.DS_Store
