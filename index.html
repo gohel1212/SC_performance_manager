@@ -774,7 +774,8 @@ async function loadFromDB(silent = false) {
     if (!silent) showSyncIndicator('Synced', true);
   } else {
     loadFromStorage();
-    if (!silent) showSyncIndicator('Local', null);
+    if (!silent) showSyncIndicator('Synced', true);
+    saveToDB();
   }
 }
 
