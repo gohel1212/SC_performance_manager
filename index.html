@@ -734,14 +734,33 @@ function showSyncIndicator(text, success) {
 
 async function loadFromDB(silent = false) {
   let data = null;
+  let dbError = null;
   try {
     if (!silent) showSyncIndicator('Syncing...', null);
     const res = await fetch('/api/data');
     if (res.ok) {
       data = await res.json();
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      dbError = errData.error || 'Server error';
     }
   } catch (err) {
     console.error('Failed to sync from database:', err);
+    dbError = err.message;
+  }
+
+  if (dbError) {
+    loadFromStorage();
+    if (!silent) showSyncIndicator('DB Error', false);
+    if (!silent) toast('⚠️ Sync failed: ' + dbError);
+    return;
+  }
+
+  if (data && data._dbWarning) {
+    loadFromStorage();
+    if (!silent) showSyncIndicator('Link KV DB', false);
+    if (!silent) toast('⚠️ ' + data._dbWarning);
+    return;
   }
 
   if (data && data.members) {
@@ -783,11 +802,19 @@ async function saveToDB() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(state)
     });
-    if (!res.ok) throw new Error('Save failed');
-    showSyncIndicator('Saved', true);
+    const resData = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(resData.error || 'Save failed');
+    
+    if (resData.warning) {
+      showSyncIndicator('Link KV DB', false);
+      toast('⚠️ Saved locally, but ' + resData.warning);
+    } else {
+      showSyncIndicator('Saved', true);
+    }
   } catch (err) {
     console.error('Save to database failed:', err);
     showSyncIndicator('Offline', false);
+    toast('⚠️ Offline: ' + err.message);
   }
 }
 

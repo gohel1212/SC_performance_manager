@@ -23,23 +23,40 @@ export default async function handler(req, res) {
         return res.status(200).json(data || {});
       } else {
         const localPath = path.join(process.cwd(), 'data.json');
+        let fileData = {};
         if (fs.existsSync(localPath)) {
           const raw = fs.readFileSync(localPath, 'utf8');
-          return res.status(200).json(JSON.parse(raw));
+          fileData = JSON.parse(raw);
+        } else if (inMemoryData) {
+          fileData = inMemoryData;
         }
-        return res.status(200).json(inMemoryData || {});
+        
+        // Return a database warning in the response if KV is not linked in Vercel production
+        return res.status(200).json({
+          ...fileData,
+          _dbWarning: process.env.VERCEL ? 'Vercel KV is not connected. Data will not persist between page refreshes in production.' : null
+        });
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      return res.status(200).json(inMemoryData || {});
+      return res.status(500).json({ error: 'Database get error: ' + error.message });
     }
   }
 
   if (req.method === 'POST') {
     try {
-      const body = req.body;
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(body);
+        } catch (e) {
+          return res.status(400).json({ error: 'Invalid JSON body string' });
+        }
+      }
+
       if (hasKV) {
         await kv.set(key, body);
+        return res.status(200).json({ success: true });
       } else {
         inMemoryData = body;
         try {
@@ -48,11 +65,14 @@ export default async function handler(req, res) {
         } catch (e) {
           console.warn('Could not write to local file, using in-memory store:', e.message);
         }
+        return res.status(200).json({ 
+          success: true, 
+          warning: process.env.VERCEL ? 'Vercel KV is not connected. Data is stored in memory and will be lost on cold starts.' : null 
+        });
       }
-      return res.status(200).json({ success: true });
     } catch (error) {
       console.error('Save error:', error);
-      return res.status(500).json({ error: 'Failed to save data' });
+      return res.status(500).json({ error: 'Database save error: ' + error.message });
     }
   }
 
