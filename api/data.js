@@ -1,8 +1,22 @@
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 import fs from 'fs';
 import path from 'path';
 
 let inMemoryData = null;
+
+// Support both standard Vercel KV (KV_REST_API_*) and Upstash Redis Marketplace Integration (UPSTASH_REDIS_REST_*)
+const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+const hasKV = !!(url && token);
+
+let dbClient = null;
+if (hasKV) {
+  try {
+    dbClient = createClient({ url, token });
+  } catch (e) {
+    console.error('Failed to create KV client:', e);
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,12 +28,11 @@ export default async function handler(req, res) {
   }
 
   const key = 'stackcode_performance_data';
-  const hasKV = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
 
   if (req.method === 'GET') {
     try {
-      if (hasKV) {
-        const data = await kv.get(key);
+      if (hasKV && dbClient) {
+        const data = await dbClient.get(key);
         return res.status(200).json(data || {});
       } else {
         const localPath = path.join(process.cwd(), 'data.json');
@@ -31,10 +44,9 @@ export default async function handler(req, res) {
           fileData = inMemoryData;
         }
         
-        // Return a database warning in the response if KV is not linked in Vercel production
         return res.status(200).json({
           ...fileData,
-          _dbWarning: process.env.VERCEL ? 'Vercel KV is not connected. Data will not persist between page refreshes in production.' : null
+          _dbWarning: process.env.VERCEL ? 'Vercel KV or Upstash Redis database is not connected. Data will not persist.' : null
         });
       }
     } catch (error) {
@@ -54,8 +66,8 @@ export default async function handler(req, res) {
         }
       }
 
-      if (hasKV) {
-        await kv.set(key, body);
+      if (hasKV && dbClient) {
+        await dbClient.set(key, body);
         return res.status(200).json({ success: true });
       } else {
         inMemoryData = body;
@@ -67,7 +79,7 @@ export default async function handler(req, res) {
         }
         return res.status(200).json({ 
           success: true, 
-          warning: process.env.VERCEL ? 'Vercel KV is not connected. Data is stored in memory and will be lost on cold starts.' : null 
+          warning: process.env.VERCEL ? 'Vercel KV or Upstash Redis is not connected. Data will be lost on cold starts.' : null 
         });
       }
     } catch (error) {
