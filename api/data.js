@@ -1,35 +1,42 @@
 import { createClient } from '@vercel/kv';
+import Redis from 'ioredis';
 import fs from 'fs';
 import path from 'path';
 
 let inMemoryData = null;
 
-// Support both standard Vercel KV (KV_REST_API_*) and Upstash Redis Marketplace Integration (UPSTASH_REDIS_REST_*)
-let url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-let token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+let dbType = null; // 'kv' or 'redis' or null
+let kvClient = null;
+let redisClient = null;
 
-// Fallback: Parse REST credentials from REDIS_URL if explicit REST variables are not provided
-if ((!url || !token) && process.env.REDIS_URL) {
+const hasREST = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+const hasTCP = !!process.env.REDIS_URL;
+
+if (hasREST) {
   try {
-    const parsed = new URL(process.env.REDIS_URL);
-    if (parsed.hostname && (parsed.password || parsed.username)) {
-      url = `https://${parsed.hostname}`;
-      token = parsed.password || parsed.username;
-      console.log('Successfully parsed REST credentials from REDIS_URL');
-    }
-  } catch (e) {
-    console.error('Failed to parse REDIS_URL:', e);
-  }
-}
-
-const hasKV = !!(url && token);
-
-let dbClient = null;
-if (hasKV) {
-  try {
-    dbClient = createClient({ url, token });
+    kvClient = createClient({
+      url: process.env.KV_REST_API_URL,
+      token: process.env.KV_REST_API_TOKEN
+    });
+    dbType = 'kv';
+    console.log('Using Vercel KV REST client');
   } catch (e) {
     console.error('Failed to create KV client:', e);
+  }
+} else if (hasTCP) {
+  try {
+    redisClient = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      connectTimeout: 5000,
+      enableOfflineQueue: false
+    });
+    redisClient.on('error', (err) => {
+      console.error('Redis Client Error:', err.message);
+    });
+    dbType = 'redis';
+    console.log('Using ioredis TCP client');
+  } catch (e) {
+    console.error('Failed to create Redis client:', e);
   }
 }
 
@@ -45,24 +52,35 @@ export default async function handler(req, res) {
   const key = 'stackcode_performance_data';
 
   if (req.method === 'GET') {
-    // Debug endpoint to safely check environment variables keys (not values)
+    // Debug endpoint to safely check environment variables keys and connection status
     if (req.url && req.url.includes('debug=1')) {
       const keys = Object.keys(process.env).filter(k => 
         k.startsWith('KV') || k.startsWith('REDIS') || k.startsWith('UPSTASH')
       );
       return res.status(200).json({ 
         envKeys: keys, 
-        hasKV, 
-        url: !!url, 
-        token: !!token,
-        redisUrlExists: !!process.env.REDIS_URL 
+        dbType,
+        hasREST,
+        hasTCP,
+        redisStatus: redisClient ? redisClient.status : 'not_initialized'
       });
     }
 
     try {
-      if (hasKV && dbClient) {
-        const data = await dbClient.get(key);
+      if (dbType === 'kv' && kvClient) {
+        const data = await kvClient.get(key);
         return res.status(200).json(data || {});
+      } else if (dbType === 'redis' && redisClient) {
+        const raw = await redisClient.get(key);
+        let data = {};
+        if (raw) {
+          try {
+            data = JSON.parse(raw);
+          } catch (e) {
+            console.error('Failed to parse JSON from Redis:', e);
+          }
+        }
+        return res.status(200).json(data);
       } else {
         const localPath = path.join(process.cwd(), 'data.json');
         let fileData = {};
@@ -95,8 +113,11 @@ export default async function handler(req, res) {
         }
       }
 
-      if (hasKV && dbClient) {
-        await dbClient.set(key, body);
+      if (dbType === 'kv' && kvClient) {
+        await kvClient.set(key, body);
+        return res.status(200).json({ success: true });
+      } else if (dbType === 'redis' && redisClient) {
+        await redisClient.set(key, JSON.stringify(body));
         return res.status(200).json({ success: true });
       } else {
         inMemoryData = body;
