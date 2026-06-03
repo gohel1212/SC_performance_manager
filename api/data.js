@@ -5,8 +5,23 @@ import path from 'path';
 let inMemoryData = null;
 
 // Support both standard Vercel KV (KV_REST_API_*) and Upstash Redis Marketplace Integration (UPSTASH_REDIS_REST_*)
-const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+let url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+let token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+// Fallback: Parse REST credentials from REDIS_URL if explicit REST variables are not provided
+if ((!url || !token) && process.env.REDIS_URL) {
+  try {
+    const parsed = new URL(process.env.REDIS_URL);
+    if (parsed.hostname && (parsed.password || parsed.username)) {
+      url = `https://${parsed.hostname}`;
+      token = parsed.password || parsed.username;
+      console.log('Successfully parsed REST credentials from REDIS_URL');
+    }
+  } catch (e) {
+    console.error('Failed to parse REDIS_URL:', e);
+  }
+}
+
 const hasKV = !!(url && token);
 
 let dbClient = null;
@@ -35,7 +50,13 @@ export default async function handler(req, res) {
       const keys = Object.keys(process.env).filter(k => 
         k.startsWith('KV') || k.startsWith('REDIS') || k.startsWith('UPSTASH')
       );
-      return res.status(200).json({ envKeys: keys, hasKV, url: !!url, token: !!token });
+      return res.status(200).json({ 
+        envKeys: keys, 
+        hasKV, 
+        url: !!url, 
+        token: !!token,
+        redisUrlExists: !!process.env.REDIS_URL 
+      });
     }
 
     try {
