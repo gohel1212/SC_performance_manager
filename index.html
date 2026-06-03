@@ -1345,12 +1345,13 @@ async function clearCurrentWeek(){
    CLOSER MANAGEMENT
 ═══════════════════════════════════════════ */
 function onClosersChange(){
-  onChange();
   const cnt = parseInt(document.getElementById('iClose').value)||0;
   const list = collectClosers();
   while(list.length<cnt) list.push({name:'',course:'',fee:''});
   while(list.length>cnt) list.pop();
   renderCloserList(list,cnt);
+  members[cur].closers = list;
+  onChange();
 }
 
 function addCloser(){
@@ -1384,9 +1385,9 @@ function renderCloserList(list,cnt){
     const row=document.createElement('div');
     row.className='closer-item';
     row.innerHTML=`
-      <div><div class="ci-lbl">Student Name</div><input class="ci-inp ci-name" placeholder="Enter name" value="${cl.name||''}" oninput="syncCloserCount()"></div>
-      <div><div class="ci-lbl">Course / Program</div><input class="ci-inp ci-course" placeholder="e.g. Data Science" value="${cl.course||''}"></div>
-      <div><div class="ci-lbl">Fee Collected (₹)</div><input class="ci-inp ci-fee" type="number" placeholder="e.g. 25000" value="${cl.fee||''}"></div>
+      <div><div class="ci-lbl">Student Name</div><input class="ci-inp ci-name" placeholder="Enter name" value="${cl.name||''}" onchange="onChange()"></div>
+      <div><div class="ci-lbl">Course / Program</div><input class="ci-inp ci-course" placeholder="e.g. Data Science" value="${cl.course||''}" onchange="onChange()"></div>
+      <div><div class="ci-lbl">Fee Collected (₹)</div><input class="ci-inp ci-fee" type="number" placeholder="e.g. 25000" value="${cl.fee||''}" onchange="onChange()"></div>
       <button class="ci-del" onclick="removeCloser(${idx})" title="Remove">✕</button>`;
     container.appendChild(row);
   });
@@ -1399,8 +1400,6 @@ function removeCloser(idx){
   renderCloserList(list,list.length);
   onChange();
 }
-
-function syncCloserCount(){}
 
 /* ═══════════════════════════════════════════
    INPUT HANDLERS
