@@ -30,6 +30,14 @@ export default async function handler(req, res) {
   const key = 'stackcode_performance_data';
 
   if (req.method === 'GET') {
+    // Debug endpoint to safely check environment variables keys (not values)
+    if (req.url && req.url.includes('debug=1')) {
+      const keys = Object.keys(process.env).filter(k => 
+        k.startsWith('KV') || k.startsWith('REDIS') || k.startsWith('UPSTASH')
+      );
+      return res.status(200).json({ envKeys: keys, hasKV, url: !!url, token: !!token });
+    }
+
     try {
       if (hasKV && dbClient) {
         const data = await dbClient.get(key);
