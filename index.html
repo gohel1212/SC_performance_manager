@@ -21,7 +21,12 @@ html{scroll-behavior:smooth;}
 body{font-family:'DM Sans',sans-serif;background:var(--bk);color:var(--wh);display:flex;min-height:100vh;overflow-x:hidden;}
 
 /* ── SIDEBAR ── */
-.sb{width:var(--sw);min-height:100vh;background:#0D0D0D;border-right:1px solid var(--bdr);position:fixed;top:0;left:0;display:flex;flex-direction:column;overflow-y:auto;z-index:200;}
+.sb{width:var(--sw);height:100vh;background:#0D0D0D;border-right:1px solid var(--bdr);position:fixed;top:0;left:0;display:flex;flex-direction:column;overflow:hidden;z-index:200;}
+.sb-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-height:0;}
+.sb-body::-webkit-scrollbar{width:4px;}
+.sb-body::-webkit-scrollbar-track{background:transparent;}
+.sb-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px;}
+.sb-body::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.3);}
 .sb-logo{padding:20px 18px 14px;border-bottom:1px solid var(--bdr);}
 .sb-brand{font-family:'Sora',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.03em;}
 .sb-brand span{color:var(--o);}
@@ -296,6 +301,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bk);color:var(--wh);displ
 .hist-action-btn.del:hover{background:rgba(220,38,38,0.2);border-color:#DC2626;}
 .hist-action-btn.save{background:rgba(22,163,74,0.15);border-color:rgba(22,163,74,0.4);color:var(--gr);}
 .hist-action-btn.save:hover{background:rgba(22,163,74,0.28);border-color:var(--gr);}
+.hist-action-btn.ppt{background:rgba(248,111,3,0.1);border-color:rgba(248,111,3,0.35);color:var(--o);margin-right:4px;}
+.hist-action-btn.ppt:hover{background:rgba(248,111,3,0.22);border-color:var(--o);}
 .hist-action-btn.cancel{background:rgba(255,255,255,0.05);border-color:var(--bdr);color:var(--g2);}
 .hist-action-btn.cancel:hover{border-color:var(--g2);color:var(--wh);}
 .hist-edit-inp{background:var(--c2);border:1px solid var(--bdr);border-radius:5px;padding:4px 7px;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--wh);outline:none;width:70px;text-align:center;transition:border-color .14s;}
@@ -447,21 +454,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bk);color:var(--wh);displ
     <button class="wcb-btn load" style="flex:1 1 calc(50% - 3px);" onclick="showCompareView()" title="Compare with last week">📊 Compare</button>
     <button class="wcb-btn clear" style="flex:1 1 100%;" onclick="clearCurrentWeek()" title="Reset all current numbers to zero">🗑 Clear This Week</button>
   </div>
-  <div class="week-hist" id="weekHistBar" style="display:none;">
-    <div class="week-hist-lbl">Week History <span id="weekHistCount" style="color:var(--g2);font-weight:400;"></span></div>
-    <div id="weekHistList"></div>
+  <div class="sb-body">
+    <div class="week-hist" id="weekHistBar" style="display:none;">
+      <div class="week-hist-lbl">Week History <span id="weekHistCount" style="color:var(--g2);font-weight:400;"></span></div>
+      <div id="weekHistList"></div>
+    </div>
+    <div class="sb-sect">Members <button class="sb-sect-add" onclick="openAddMember()">+ Add</button></div>
+    <div class="sb-nav" id="sbNav"></div>
+    <div class="sb-sect">Team</div>
+    <button class="team-nb" onclick="showTeam()">
+      <div class="nb-num" style="background:rgba(255,255,255,0.15);color:#fff;">📊</div>
+      <div class="nb-info"><div class="nb-name">Team Total</div></div>
+    </button>
+    <button class="compare-nb" onclick="showCompareView()">
+      <div class="nb-num" style="background:rgba(59,130,246,0.2);color:var(--bl);">⚡</div>
+      <div class="nb-info"><div class="nb-name">Week Compare</div></div>
+    </button>
   </div>
-  <div class="sb-sect">Members <button class="sb-sect-add" onclick="openAddMember()">+ Add</button></div>
-  <div class="sb-nav" id="sbNav"></div>
-  <div class="sb-sect">Team</div>
-  <button class="team-nb" onclick="showTeam()">
-    <div class="nb-num" style="background:rgba(255,255,255,0.15);color:#fff;">📊</div>
-    <div class="nb-info"><div class="nb-name">Team Total</div></div>
-  </button>
-  <button class="compare-nb" onclick="showCompareView()">
-    <div class="nb-num" style="background:rgba(59,130,246,0.2);color:var(--bl);">⚡</div>
-    <div class="nb-info"><div class="nb-name">Week Compare</div></div>
-  </button>
   <div class="sb-exports">
     <div class="se-title">Export</div>
     <button class="se-btn ppt" id="btnPPT" onclick="generatePPT()">🎯 Generate PPT</button>
@@ -1214,7 +1223,8 @@ function renderHistModal(){
   document.getElementById('histModalActions').innerHTML = _histEditMode
     ? `<button class="hist-action-btn save" onclick="saveHistEdit()">💾 Save</button>
        <button class="hist-action-btn cancel" onclick="cancelHistEdit()">✕ Cancel</button>`
-    : `<button class="hist-action-btn edit" onclick="enterHistEdit()">✏️ Edit</button>
+    : `<button class="hist-action-btn ppt" onclick="generatePPTForWeek(_histEditIdx)">🎯 Download PPT</button>
+       <button class="hist-action-btn edit" onclick="enterHistEdit()">✏️ Edit</button>
        <button class="hist-action-btn del" onclick="deleteHistEntry()">🗑 Delete</button>
        <button class="hist-close" onclick="closeHistModal()">✕ Close</button>`;
 
@@ -1746,10 +1756,43 @@ function toast(msg){
 
 /* ═══════════════════════════════════════════
    GENERATE PPT
-═══════════════════════════════════════════ */
+ ═══════════════════════════════════════════ */
 async function generatePPT(){
   saveCur();
   const week=document.getElementById('weekLabel').value;
+  const prevLabel=localStorage.getItem('sc_prevWeekLabel')||'Last Week';
+  await buildPPT(week, members, prevWeekData, prevLabel);
+}
+
+async function generatePPTForWeek(idx){
+  const hist = getWeekHistory();
+  const w = hist[idx];
+  if(!w) return;
+
+  const week = w.label;
+  
+  // Determine previous week data
+  let prevWeekDataMap = {};
+  let prevLabel = 'Last Week';
+  
+  if (idx > 0 && hist[idx - 1]) {
+    const prevW = hist[idx - 1];
+    prevLabel = prevW.label;
+    (prevW.data || []).forEach(m => {
+      prevWeekDataMap[m.name] = {
+        calls: m.calls || 0,
+        leads: m.leads || 0,
+        cbook: m.cbook || 0,
+        coun: m.coun || 0,
+        close: m.close || 0
+      };
+    });
+  }
+  
+  await buildPPT(week, w.data, prevWeekDataMap, prevLabel);
+}
+
+async function buildPPT(week, membersList, prevWeekDataMap, passedPrevLabel){
   document.getElementById('loaderText').textContent='Building your PPT…';
   document.getElementById('loader').classList.add('on');
   await new Promise(r=>setTimeout(r,80));
@@ -1761,9 +1804,9 @@ async function generatePPT(){
     const mkS=()=>({type:'outer',blur:8,offset:3,angle:135,color:'000000',opacity:0.14});
 
     // Compute total sums instead of counts of persons
-    const totalColdCalls = members.reduce((s, m) => s + (m.calls || 0), 0);
-    const totalCounSales = members.filter(m => m.role !== 'ISE').reduce((s, m) => s + (m.coun || 0), 0);
-    const totalCloseSales = members.filter(m => m.role !== 'ISE').reduce((s, m) => s + (m.close || 0), 0);
+    const totalColdCalls = membersList.reduce((s, m) => s + (m.calls || 0), 0);
+    const totalCounSales = membersList.filter(m => m.role !== 'ISE').reduce((s, m) => s + (m.coun || 0), 0);
+    const totalCloseSales = membersList.filter(m => m.role !== 'ISE').reduce((s, m) => s + (m.close || 0), 0);
 
     /* ── SLIDE 1: COVER ── */
     {
@@ -1806,8 +1849,8 @@ async function generatePPT(){
     }
 
     /* ── SLIDES: INDIVIDUAL MEMBERS ── */
-    for(let i=0;i<members.length;i++){
-      const m=members[i];
+    for(let i=0;i<membersList.length;i++){
+      const m=membersList[i];
       const isISE=m.role==='ISE';
       const accentCol=isISE?PU:OR;
       const s=pres.addSlide();
@@ -1869,7 +1912,7 @@ async function generatePPT(){
 
       // ── CLOSER DETAILS (Sales only, right side) ──
       if(!isISE){
-        const cls=m.closers.filter(c=>c.name);
+        const cls=(m.closers||[]).filter(c=>c.name);
         s.addText('● CLOSER DETAILS',{x:6.0,y:2.62,w:3.6,h:0.3,fontSize:9,fontFace:'Calibri',bold:true,color:GR,align:'left',charSpacing:2});
         if(cls.length>0){
           const tableRows=[[
@@ -1909,13 +1952,13 @@ async function generatePPT(){
       s.addShape(pres.shapes.RECTANGLE,{x:0.38,y:1.0,w:9.2,h:0.025,fill:{color:'1E1E1E'},line:{color:'1E1E1E'}});
 
       // Read prev week label
-      const prevLabel=localStorage.getItem('sc_prevWeekLabel')||'Last Week';
+      const prevLabel = passedPrevLabel || 'Last Week';
 
       // Totals
       let prevTot={calls:0,coun:0,close:0};
       let currTot={calls:0,coun:0,close:0};
-      members.forEach(m=>{
-        const p=prevWeekData[m.name]||{calls:0,coun:0,close:0,cbook:0};
+      membersList.forEach(m=>{
+        const p=prevWeekDataMap[m.name]||{calls:0,coun:0,close:0,cbook:0};
         prevTot.calls+=p.calls||0;
         prevTot.coun+=(m.role==='ISE'?p.cbook||0:p.coun||0);
         prevTot.close+=p.close||0;
@@ -1963,8 +2006,8 @@ async function generatePPT(){
         {text:`${week} Closers`,options:{bold:true,color:GR,fill:{color:HDR},fontSize:9}},
         {text:'Δ',options:{bold:true,color:WH,fill:{color:HDR},fontSize:9}},
       ]];
-      members.forEach((m,i)=>{
-        const p=prevWeekData[m.name]||{calls:0,coun:0,close:0,cbook:0,leads:0};
+      membersList.forEach((m,i)=>{
+        const p=prevWeekDataMap[m.name]||{calls:0,coun:0,close:0,cbook:0,leads:0};
         const prevCoun=m.role==='ISE'?(p.cbook||0):(p.coun||0);
         const currCoun=m.role==='ISE'?(m.cbook||0):m.coun;
         const prevClose=m.role==='ISE'?0:(p.close||0);
@@ -1984,11 +2027,8 @@ async function generatePPT(){
         ]);
       });
       s.addTable(tRows,{x:0.4,y:3.22,w:9.2,colW:[1.6,0.7,1.0,1.0,1.1,1.1,1.0,1.0,0.7],fontSize:9,fontFace:'Calibri',border:{pt:0.5,color:'2A2A2A'},align:'center'});
-
-      // Footer
       s.addText('StackCode Training Institute  ·  Ahmedabad & Rajkot',{x:0.4,y:5.35,w:9.2,h:0.2,fontSize:7,fontFace:'Calibri',color:'333333',align:'center'});
     }
-
     await pres.writeFile({fileName:`StackCode_${week.replace(/[^a-z0-9]/gi,'_')}.pptx`});
     toast('PPT downloaded successfully!');
   } catch(e){
@@ -1998,6 +2038,8 @@ async function generatePPT(){
     document.getElementById('loader').classList.remove('on');
   }
 }
+
+
 
 /* ═══════════════════════════════════════════
    GENERATE EXCEL
